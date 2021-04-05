@@ -31,3 +31,4 @@ SUBCOMMANDS:
 $ make
 # make install
 ```
+*Note that `#` denotes a root shell, while `$` denotes a standard shell.*
