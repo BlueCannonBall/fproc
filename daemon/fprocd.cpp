@@ -43,7 +43,7 @@ void handle_conn(int socket) {
         }
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
-            case 0:
+            case 0: // start
             do {
                 Process *new_proc = new Process;
                 unsigned int id = uuid++;
@@ -58,7 +58,7 @@ void handle_conn(int socket) {
                 new_proc->running = true;
                 data_mtx.unlock();
             } while (0); break;
-            case 1:
+            case 1: // delete
             do {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
@@ -81,7 +81,7 @@ void handle_conn(int socket) {
                 processes.erase(id);
                 data_mtx.unlock();
             } while(0); break;
-            case 2:
+            case 2: // stop
             do {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
@@ -101,7 +101,7 @@ void handle_conn(int socket) {
                 processes[id]->running = false;
                 data_mtx.unlock();
             } while (0); break;
-            case 3:
+            case 3: // list
             do {
                 data_mtx.lock();
                 buf.data_array = std::vector<unsigned char>();
@@ -114,6 +114,28 @@ void handle_conn(int socket) {
                     buf.put_u8(process.second->running);
                 }
                 write(socket, buf.data_array.data(), buf.data_array.size());
+                data_mtx.unlock();
+            } while (0); break;
+            case 4: // start
+            do {
+                unsigned int id = buf.get_u32();
+                data_mtx.lock();
+                if (processes.find(id) == processes.end()) {
+                    buf.data_array = std::vector<unsigned char>();
+                    buf.offset = 0;
+                    buf.put_u8(1);
+                    buf.put_utf8("That process does not exist.");
+                    write(socket, buf.data_array.data(), buf.data_array.size());
+                    data_mtx.unlock();
+                }
+                processes[id]->child->terminate();
+                delete processes[id]->child;
+                processes[id]->child = new bp::child(processes[id]->command);
+                buf.data_array = std::vector<unsigned char>();
+                buf.offset = 0;
+                buf.put_u8(0);
+                write(socket, buf.data_array.data(), 1);
+                processes[id]->running = true;
                 data_mtx.unlock();
             } while (0); break;
         }
