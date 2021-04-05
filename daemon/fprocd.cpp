@@ -128,8 +128,9 @@ void maintain_procs() {
     for (;;) {
         data_mtx.lock();
         for (auto const& process : processes) {
-            if (!process.second->child->running()) {
+            if (!process.second->child->running() && process.second->running) {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died!" << endl;
+                process.second->child->join();
                 delete process.second->child;
                 process.second->running = false;
                 process.second->child = new bp::child(process.second->command);
