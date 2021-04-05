@@ -28,7 +28,7 @@ mutex data_mtx;
 unordered_map<unsigned int, Process*> processes;
 
 void signal_handler(int signum) {
-   cout << "Signal (" << signum << ") received.\n";
+   cout << "fprocd-signal_handler: Signal (" << signum << ") received.\n";
    //exit(signum);  
 }
 
@@ -38,7 +38,7 @@ void handle_conn(int socket) {
         buf.data_array = vector<unsigned char>(1024);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
-            cout << "Client disconnected." << endl;
+            cout << "fprocd-handle_conn: Client disconnected." << endl;
             return;
         }
         unsigned char pckt_id = buf.get_u8();
@@ -129,7 +129,7 @@ void maintain_procs() {
         data_mtx.lock();
         for (auto const& process : processes) {
             if (!process.second->child->running()) {
-                cout << "Process (" << process.first << ") died!" << endl;
+                cout << "fprocd-maintain_procs: Process (" << process.first << ") died!" << endl;
                 delete process.second->child;
                 process.second->running = false;
                 process.second->child = new bp::child(process.second->command);
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    cout << "Listening on port " << port << endl;
+    cout << "fprocd: Listening on port " << port << endl;
     thread(maintain_procs).detach();
     for (;;) {
         if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        cout << "Recieved new connection.\n";
+        cout << "fprocd: Recieved new connection.\n";
         thread(handle_conn, new_socket).detach();
     }
     return 0;
