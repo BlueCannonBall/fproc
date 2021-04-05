@@ -21,7 +21,7 @@ unsigned int uuid;
 struct Process {
     std::string command;
     bp::child* child;
-    bool running = false;
+    bool running = true;
 };
 
 mutex data_mtx;
@@ -57,8 +57,7 @@ void handle_conn(int socket) {
                 processes[id] = new_proc;
                 new_proc->running = true;
                 data_mtx.unlock();
-                break;
-            } while (0);
+            } while (0); break;
             case 1:
             do {
                 unsigned int id = buf.get_u32();
@@ -70,7 +69,6 @@ void handle_conn(int socket) {
                     buf.put_utf8("That process does not exist.");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
-                    break;
                 }
                 processes[id]->child->terminate();
                 buf.data_array = std::vector<unsigned char>();
@@ -82,10 +80,10 @@ void handle_conn(int socket) {
                 delete processes[id];
                 processes.erase(id);
                 data_mtx.unlock();
-                break;
-            } while(0);
+            } while(0); break;
             case 2:
             do {
+                cout << "retard" << endl;
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -95,7 +93,6 @@ void handle_conn(int socket) {
                     buf.put_utf8("That process does not exist.");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
-                    break;
                 }
                 processes[id]->child->terminate();
                 buf.data_array = std::vector<unsigned char>();
@@ -104,8 +101,7 @@ void handle_conn(int socket) {
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = false;
                 data_mtx.unlock();
-                break;
-            } while (0);
+            } while (0); break;
             case 3:
             do {
                 data_mtx.lock();
@@ -119,7 +115,7 @@ void handle_conn(int socket) {
                     buf.put_u8(process.second->running);
                 }
                 data_mtx.unlock();
-            } while (0);
+            } while (0); break;
         }
     }
 }
@@ -128,13 +124,12 @@ void maintain_procs() {
     for (;;) {
         data_mtx.lock();
         for (auto const& process : processes) {
+            cout << process.second->running << endl;
             if (!process.second->child->running() && process.second->running) {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died!" << endl;
                 process.second->child->join();
                 delete process.second->child;
-                process.second->running = false;
                 process.second->child = new bp::child(process.second->command);
-                process.second->running = true;
             }
         }
         data_mtx.unlock();
