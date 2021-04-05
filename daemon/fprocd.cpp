@@ -26,10 +26,16 @@ struct Process {
 mutex data_mtx;
 unordered_map<unsigned int, Process*> processes;
 
+void signal_handler(int signum) {
+   cout << "Signal (" << signum << ") received.\n";
+   //exit(signum);  
+}
+
 void handle_conn(int socket) {
     for (;;) {
         spb::StreamPeerBuffer buf(true);
-        int valread = read(socket, buf.data_array.data(), 1024);
+        buf.data_array = vector<unsigned char>(1024);
+        int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
             cout << "Client disconnected." << endl;
             return;
@@ -128,6 +134,8 @@ void maintain_procs() {
 }
 
 int main(int argc, char **argv) {
+    signal(SIGPIPE, signal_handler); 
+    
     int port;
     if (argc <= 1) {
         port = 11881;
