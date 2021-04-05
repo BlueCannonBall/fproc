@@ -10,6 +10,7 @@
 #include <string.h>
 #include <boost/process.hpp>
 #include <signal.h>
+#include <chrono>
 #include "streampeerbuffer.hpp"
 
 using namespace std;
@@ -127,9 +128,16 @@ void maintain_procs() {
     for (;;) {
         data_mtx.lock();
         for (auto const& process : processes) {
-            cout << process.second->child->running() << endl;
+            if (!process.second->child->running()) {
+                cout << "Process (" << process.first << ") died!" << endl;
+                delete process.second->child;
+                process.second->running = false;
+                process.second->child = new bp::child(process.second->command);
+                process.second->running = true;
+            }
         }
         data_mtx.unlock();
+        this_thread::sleep_for(chrono::milliseconds(1000));
     }
 }
 
