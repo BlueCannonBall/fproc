@@ -36,6 +36,18 @@ fn main() -> std::io::Result<()> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("restart")
+                .about("(Re)start a process")
+                .version("0.1")
+                .arg(
+                    Arg::with_name("id")
+                        .help("The process id to (re)start.")
+                        .index(1)
+                        .multiple(true)
+                        .required(true),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("delete")
                 .about("Delete a process")
                 .version("0.1")
@@ -124,6 +136,48 @@ fn main() -> std::io::Result<()> {
                         let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
                         let cmd = cmd.join(" ");
                         println!("fproc-stop: Successfully stopped process(es) \"{}\"", cmd);
+                    } else {
+                        println!("fproc-stop: Error: {}", buf.get_utf8());
+                        std::process::exit(1);
+                    }
+                }
+            }
+        },
+        Some("restart") => {
+            if let Some(matches) = matches.subcommand_matches("restart") {
+                if matches.is_present("id") {
+                    let mut buf = binary::StreamPeerBuffer::new();
+                    buf.put_u8(packet_ids::START);
+                    
+                    
+                    let cmd = matches.values_of("id").unwrap();
+                    for id in cmd {
+                        let id = match id.parse::<u32>() {
+                            Ok(v) => v,
+                            Err(e) => {
+                                println!("fproc-start: Error: Please supply a valid number");
+                                std::process::exit(1)
+                            }
+                        };
+                        buf.put_u32(id);
+                    }
+
+                    // open socket
+                    let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                    stream.write_all(buf.cursor.get_ref().as_slice())?;
+
+                    let mut read_buf = [0; 128];
+                    stream.read(&mut read_buf)?;
+                    stream.shutdown(std::net::Shutdown::Both);
+
+                    let mut buf = binary::StreamPeerBuffer::new();
+                    buf.set_data_array(read_buf.to_vec());
+                    
+                    let ok = buf.get_u8();
+                    if ok == 0 {
+                        let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
+                        let cmd = cmd.join(" ");
+                        println!("fproc-start: Successfully started process(es) \"{}\"", cmd);
                     } else {
                         println!("fproc-stop: Error: {}", buf.get_utf8());
                         std::process::exit(1);

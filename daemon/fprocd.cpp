@@ -69,6 +69,7 @@ void handle_conn(int socket) {
                     buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
+                    break;
                 }
                 processes[id]->child->terminate();
                 buf.data_array = std::vector<unsigned char>();
@@ -92,6 +93,7 @@ void handle_conn(int socket) {
                     buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
+                    break;
                 }
                 processes[id]->child->terminate();
                 buf.data_array = std::vector<unsigned char>();
@@ -127,6 +129,7 @@ void handle_conn(int socket) {
                     buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
+                    break;
                 }
                 processes[id]->child->terminate();
                 delete processes[id]->child;
