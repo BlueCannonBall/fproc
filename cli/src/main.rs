@@ -3,7 +3,7 @@ use prettytable::{cell, row, Cell, Row, Table};
 use psutil::process::processes;
 
 use std::io::prelude::*;
-use std::net::TcpStream;
+use std::os::unix::net::UnixStream;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
@@ -16,6 +16,7 @@ fn main() -> std::io::Result<()> {
     let matches = App::new("fproc")
         .subcommand(
             SubCommand::with_name("run")
+                .aliases(&["up", "create", "new"])
                 .about("Run a process")
                 .version("0.1")
                 .arg(
@@ -28,6 +29,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("stop")
+                .aliases(&["disable", "end"])
                 .about("Stop a process")
                 .version("0.1")
                 .arg(
@@ -40,6 +42,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("restart")
+                .aliases(&["start"])
                 .about("(Re)start a process")
                 .version("0.1")
                 .arg(
@@ -52,6 +55,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("delete")
+                .aliases(&["rm", "del"])
                 .about("Delete a process")
                 .version("0.1")
                 .arg(
@@ -64,6 +68,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("list")
+                .aliases(&["ls"])
                 .about("List all managed processes.")
                 .version("0.1"),
         )
@@ -107,7 +112,7 @@ fn main() -> std::io::Result<()> {
                     buf.put_utf8(cmd);
 
                     // open socket
-                    let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
                     stream.write_all(buf.cursor.get_ref().as_slice())?;
 
                     let mut read_buf = [0; 128];
@@ -148,7 +153,7 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
                     stream.write_all(buf.cursor.get_ref().as_slice())?;
 
                     let mut read_buf = [0; 128];
@@ -189,7 +194,7 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
                     stream.write_all(buf.cursor.get_ref().as_slice())?;
 
                     let mut read_buf = [0; 128];
@@ -230,7 +235,7 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
                     stream.write_all(buf.cursor.get_ref().as_slice())?;
 
                     let mut read_buf = [0; 128];
@@ -258,7 +263,7 @@ fn main() -> std::io::Result<()> {
                 buf.put_u8(packet_ids::LIST);
 
                 // open socket
-                let mut stream = TcpStream::connect("127.0.0.1:11881")?;
+                let mut stream = UnixStream::connect("~/.fproc.sock")?;
                 stream.write_all(buf.cursor.get_ref().as_slice())?;
 
                 let mut read_buf = [0; 1024];
@@ -294,7 +299,7 @@ fn main() -> std::io::Result<()> {
                 table.printstd();
             }
         }
-        None => println!("fproc: The fproc cli cannot run the fproc server yet!"),
+        None => println!("fproc: Run `fproc --help` for options"),
         _ => println!("fproc: Error: Unknown option"),
     }
 
