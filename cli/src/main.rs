@@ -51,7 +51,7 @@ fn main() -> std::io::Result<()> {
                         let cmd = cmd.join(" ");
                         println!("fproc-run: Successfully ran command \"{}\"", cmd);
                     } else {
-                        println!("fproc-run: Command failed: {}", buf.get_utf8());
+                        println!("fproc-run: Error: {}", buf.get_utf8());
                     }
                 }
             }
