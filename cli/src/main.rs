@@ -32,10 +32,6 @@ fn main() -> std::io::Result<()> {
                     
                     let cmd: Vec<&str> = matches.values_of("command").unwrap().collect();
                     let cmd = cmd.join(" ");
-                    println!(
-                        "Recieved command {}",
-                        cmd
-                    );
                     buf.put_utf8(cmd);
 
                     // open socket
@@ -44,15 +40,18 @@ fn main() -> std::io::Result<()> {
 
                     let mut read_buf = [0; 128];
                     stream.read(&mut read_buf)?;
+                    stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.set_data_array(read_buf.to_vec());
                     
                     let ok = buf.get_u8();
-                    if ok == 1 {
+                    if ok == 0 {
                         let cmd: Vec<&str> = matches.values_of("command").unwrap().collect();
                         let cmd = cmd.join(" ");
-                        println!("Successfully ran command \"{}\"", cmd);
+                        println!("fproc-run: Successfully ran command \"{}\"", cmd);
+                    } else {
+                        println!("fproc-run: Command failed: {}", buf.get_utf8());
                     }
                 }
             }
