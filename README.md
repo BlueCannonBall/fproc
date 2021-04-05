@@ -8,7 +8,7 @@ After setting up cpu/memory limits for all the processes running on my server, I
 
 ## Usage
 ```
-└─> fproc help
+$ fproc help
 fproc 
 
 USAGE:
@@ -26,5 +26,8 @@ SUBCOMMANDS:
     stop      Stop a process
 ```
 
-## Building
-not yet noob
+## Building & Installing
+```
+$ make
+# make install
+```
