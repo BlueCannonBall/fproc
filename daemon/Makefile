@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -s -O2 -pthread -std=c++11
+CFLAGS = -Wall -s -O2 -pthread -lboost_system
 TARGET = fprocd
 
 all: $(TARGET)
