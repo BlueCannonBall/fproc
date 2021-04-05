@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <stdlib.h>
-#include <netinet/in.h>
 #include <string.h>
 #include <boost/process.hpp>
 #include <signal.h>
@@ -26,10 +25,15 @@ struct Process {
 
 mutex data_mtx;
 unordered_map<unsigned int, Process*> processes;
+const char* home = getenv("HOME");
+string socket_path;
 
 void signal_handler(int signum) {
-   cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
-   //exit(signum);  
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
+    if (signum != SIGPIPE) {
+        unlink(socket_path.c_str());
+        exit(EXIT_FAILURE);
+    }
 }
 
 void handle_conn(int socket) {
@@ -162,50 +166,50 @@ void maintain_procs() {
 }
 
 int main(int argc, char **argv) {
-    signal(SIGPIPE, signal_handler); 
-    
-    int port;
-    if (argc <= 1) {
-        port = 11881;
+    signal(SIGPIPE, signal_handler);
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+    signal(SIGQUIT, signal_handler);
+    signal(SIGHUP, signal_handler);
+
+    if (home) {
+        socket_path = std::string(home) + "/.fproc.sock";
     } else {
-        port = atoi(argv[1]);
+        cerr << "Failed to find HOME env var\n";
+        exit(EXIT_FAILURE);
     }
 
+    if (argc > 1)
+        socket_path = argv[1];
+
     int server_fd, new_socket;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
+    struct sockaddr_un address;
+    memset(&address, 0, sizeof(address));
        
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
-       
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                                                  &opt, sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-    address.sin_family = AF_INET;
-    int localhost = (127 << 24) + 1;
-    address.sin_addr.s_addr = htonl(localhost);
-    address.sin_port = htons(port);
+
+    address.sun_family = AF_UNIX;
+    strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path)-1);
+    //strcpy((char*) socket_path.c_str(), address.sun_path);
        
     if (bind(server_fd, (struct sockaddr*) &address, 
-                                 sizeof(address))<0) {
+                                 sizeof(address))) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, 5) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
 
-    cout << "fprocd: Listening on port " << port << endl;
+    cout << "fprocd: Listening on file " << socket_path << endl;
     thread(maintain_procs).detach();
     for (;;) {
         if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
-                           (socklen_t*) &addrlen))<0) {
+                           (socklen_t*) sizeof(address)))) {
             perror("accept");
             exit(EXIT_FAILURE);
         }

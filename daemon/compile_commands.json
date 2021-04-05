@@ -1,16 +1,1 @@
-[
-    {
-        "arguments": [
-            "g++",
-            "-c",
-            "-Wall",
-            "-O2",
-            "-pthread",
-            "-o",
-            "fprocd",
-            "fprocd.cpp"
-        ],
-        "directory": "/home/optimal/Desktop/mm_files/cpp/fproc/daemon",
-        "file": "fprocd.cpp"
-    }
-]
+[]
