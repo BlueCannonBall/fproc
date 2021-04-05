@@ -113,6 +113,7 @@ void handle_conn(int socket) {
                     buf.put_u32(process.second->child->id());
                     buf.put_u8(process.second->running);
                 }
+                write(socket, buf.data_array.data(), buf.data_array.size());
                 data_mtx.unlock();
             } while (0); break;
         }
