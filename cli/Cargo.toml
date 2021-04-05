@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 clap = "2.33.3"
 prettytable-rs = "0.8.0"
-psutil = "3.2.0"
+procfs = "0.9.1"

@@ -1,6 +1,6 @@
 use clap::{App, Arg, SubCommand};
 use prettytable::{cell, row, Cell, Row, Table};
-use psutil::process::processes;
+use procfs::process::all_processes;
 
 use std::io::prelude::*;
 use std::os::unix::net::UnixStream;
@@ -8,6 +8,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 use std::env;
+use std::path::Path;
 
 mod binary;
 mod model;
@@ -75,32 +76,6 @@ fn main() -> std::io::Result<()> {
         )
         .get_matches();
 
-    let procs = processes().unwrap();
-    let mut found_process = false;
-    for process in procs {
-        match process {
-            Ok(p) => {
-                match p.name() {
-                    Ok(name) => if name == "fprocd" {
-                        found_process = true;
-                    },
-                    Err(_) => ()
-                }
-            },
-            Err(_) => ()
-        }
-    }
-    if !found_process {
-        Command::new("fprocd")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .stdin(Stdio::null())
-            .spawn()
-            .expect("failed to execute process");
-        println!("fproc: Started daemon");
-        thread::sleep(Duration::from_millis(1000));
-    }
-
     let home = env::var("HOME");
     let home = match home {
         Ok(home) => home,
@@ -111,6 +86,36 @@ fn main() -> std::io::Result<()> {
     };
 
     let socket_path = format!("{}/.fproc.sock", home);
+
+    let procs = all_processes().unwrap();
+    let mut found_process = false;
+    let my_owner = procfs::process::Process::myself().unwrap().owner;
+    for process in procs {
+        if process.owner == my_owner {
+            let stat = process.status();
+            match stat {
+                Ok(status) => {
+                    if status.name == "fprocd" {
+                        found_process = true;
+                    }
+                },
+                Err(_) => ()
+            }
+        }
+    }
+    if !found_process {
+        if Path::new(&socket_path).exists() {
+            std::fs::remove_file(&socket_path).unwrap();
+        }
+        Command::new("fprocd")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
+            .expect("failed to execute process");
+        println!("fproc: Started daemon");
+        thread::sleep(Duration::from_millis(1000));
+    }
 
     match matches.subcommand_name() {
         Some("run") => {
@@ -290,7 +295,7 @@ fn main() -> std::io::Result<()> {
                     println!("fproc-list: Error: No processes found");
                     std::process::exit(1);
                 }
-                println!("fproc-list: Found {} processes", amount);
+                println!("fproc-list: Found {} process(es)", amount);
 
                 let mut processes = vec![];
 
