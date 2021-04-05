@@ -7,6 +7,7 @@ use std::os::unix::net::UnixStream;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
+use std::env;
 
 mod binary;
 mod model;
@@ -100,6 +101,17 @@ fn main() -> std::io::Result<()> {
         thread::sleep(Duration::from_millis(1000));
     }
 
+    let home = env::var("HOME");
+    let home = match home {
+        Ok(home) => home,
+        Err(_) => {
+            println!("fproc: Error: HOME not present in environment");
+            std::process::exit(1)
+        }
+    };
+
+    let socket_path = format!("{}/.fproc.sock", home);
+
     match matches.subcommand_name() {
         Some("run") => {
             if let Some(matches) = matches.subcommand_matches("run") {
@@ -112,11 +124,11 @@ fn main() -> std::io::Result<()> {
                     buf.put_utf8(cmd);
 
                     // open socket
-                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
-                    stream.write_all(buf.cursor.get_ref().as_slice())?;
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
+                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
                     let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf)?;
+                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
@@ -153,11 +165,11 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
-                    stream.write_all(buf.cursor.get_ref().as_slice())?;
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
+                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
                     let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf)?;
+                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
@@ -194,11 +206,11 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
-                    stream.write_all(buf.cursor.get_ref().as_slice())?;
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
+                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
                     let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf)?;
+                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
@@ -235,11 +247,11 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // open socket
-                    let mut stream = UnixStream::connect("~/.fproc.sock")?;
-                    stream.write_all(buf.cursor.get_ref().as_slice())?;
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
+                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
                     let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf)?;
+                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
@@ -263,11 +275,11 @@ fn main() -> std::io::Result<()> {
                 buf.put_u8(packet_ids::LIST);
 
                 // open socket
-                let mut stream = UnixStream::connect("~/.fproc.sock")?;
-                stream.write_all(buf.cursor.get_ref().as_slice())?;
+                let mut stream = UnixStream::connect(socket_path).unwrap();
+                stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
                 let mut read_buf = [0; 1024];
-                stream.read(&mut read_buf)?;
+                stream.read(&mut read_buf).unwrap();
                 stream.shutdown(std::net::Shutdown::Both);
 
                 let mut buf = binary::StreamPeerBuffer::new();

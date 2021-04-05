@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     thread(maintain_procs).detach();
     for (;;) {
         if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
-                           (socklen_t*) &len))) {
+                           (socklen_t*) &len)) == -1) {
             perror("accept");
             exit(EXIT_FAILURE);
         }
