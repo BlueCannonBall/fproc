@@ -1,13 +1,16 @@
 use clap::{App, Arg, SubCommand};
-use prettytable::{Table, Row, Cell, row, cell};
+use prettytable::{cell, row, Cell, Row, Table};
+use psutil::process::processes;
 
 use std::io::prelude::*;
 use std::net::TcpStream;
-use std::process;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
 
 mod binary;
-mod packet_ids;
 mod model;
+mod packet_ids;
 
 fn main() -> std::io::Result<()> {
     let matches = App::new("fproc")
@@ -62,18 +65,43 @@ fn main() -> std::io::Result<()> {
         .subcommand(
             SubCommand::with_name("list")
                 .about("List all managed processes.")
-                .version("0.1")
+                .version("0.1"),
         )
         .get_matches();
-    
+
+    let procs = processes().unwrap();
+    let mut found_process = false;
+    for process in procs {
+        match process {
+            Ok(p) => {
+                match p.name() {
+                    Ok(name) => if name == "fprocd" {
+                        found_process = true;
+                    },
+                    Err(_) => ()
+                }
+            },
+            Err(_) => ()
+        }
+    }
+    if !found_process {
+        Command::new("fprocd")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
+            .expect("failed to execute process");
+        println!("fproc: Started daemon");
+        thread::sleep(Duration::from_millis(1000));
+    }
+
     match matches.subcommand_name() {
         Some("run") => {
             if let Some(matches) = matches.subcommand_matches("run") {
                 if matches.is_present("command") {
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.put_u8(packet_ids::RUN);
-                    
-                    
+
                     let cmd: Vec<&str> = matches.values_of("command").unwrap().collect();
                     let cmd = cmd.join(" ");
                     buf.put_utf8(cmd);
@@ -88,7 +116,7 @@ fn main() -> std::io::Result<()> {
 
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.set_data_array(read_buf.to_vec());
-                    
+
                     let ok = buf.get_u8();
                     if ok == 0 {
                         let cmd: Vec<&str> = matches.values_of("command").unwrap().collect();
@@ -100,14 +128,13 @@ fn main() -> std::io::Result<()> {
                     }
                 }
             }
-        },
+        }
         Some("stop") => {
             if let Some(matches) = matches.subcommand_matches("stop") {
                 if matches.is_present("id") {
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.put_u8(packet_ids::STOP);
-                    
-                    
+
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
                         let id = match id.parse::<u32>() {
@@ -130,7 +157,7 @@ fn main() -> std::io::Result<()> {
 
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.set_data_array(read_buf.to_vec());
-                    
+
                     let ok = buf.get_u8();
                     if ok == 0 {
                         let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
@@ -142,14 +169,13 @@ fn main() -> std::io::Result<()> {
                     }
                 }
             }
-        },
+        }
         Some("restart") => {
             if let Some(matches) = matches.subcommand_matches("restart") {
                 if matches.is_present("id") {
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.put_u8(packet_ids::START);
-                    
-                    
+
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
                         let id = match id.parse::<u32>() {
@@ -172,7 +198,7 @@ fn main() -> std::io::Result<()> {
 
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.set_data_array(read_buf.to_vec());
-                    
+
                     let ok = buf.get_u8();
                     if ok == 0 {
                         let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
@@ -184,14 +210,13 @@ fn main() -> std::io::Result<()> {
                     }
                 }
             }
-        },
+        }
         Some("delete") => {
             if let Some(matches) = matches.subcommand_matches("delete") {
                 if matches.is_present("id") {
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.put_u8(packet_ids::DELETE);
-                    
-                    
+
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
                         let id = match id.parse::<u32>() {
@@ -214,7 +239,7 @@ fn main() -> std::io::Result<()> {
 
                     let mut buf = binary::StreamPeerBuffer::new();
                     buf.set_data_array(read_buf.to_vec());
-                    
+
                     let ok = buf.get_u8();
                     if ok == 0 {
                         let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
@@ -226,7 +251,7 @@ fn main() -> std::io::Result<()> {
                     }
                 }
             }
-        },
+        }
         Some("list") => {
             if let Some(matches) = matches.subcommand_matches("list") {
                 let mut buf = binary::StreamPeerBuffer::new();
@@ -257,7 +282,7 @@ fn main() -> std::io::Result<()> {
                         id: buf.get_u32(),
                         name: buf.get_utf8(),
                         pid: buf.get_u32(),
-                        running: buf.get_u8() != 0
+                        running: buf.get_u8() != 0,
                     });
                 }
 
@@ -268,9 +293,9 @@ fn main() -> std::io::Result<()> {
                 }
                 table.printstd();
             }
-        },
+        }
         None => println!("fproc: The fproc cli cannot run the fproc server yet!"),
-        _ => println!("fproc: Error: Unknown option")
+        _ => println!("fproc: Error: Unknown option"),
     }
 
     Ok(())
