@@ -162,7 +162,8 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
+    int localhost = (127 << 24) + 1;
+    address.sin_addr.s_addr = htonl(localhost);
     address.sin_port = htons(port);
        
     if (bind(server_fd, (struct sockaddr*) &address, 
