@@ -28,7 +28,7 @@ mutex data_mtx;
 unordered_map<unsigned int, Process*> processes;
 
 void signal_handler(int signum) {
-   cout << "fprocd-signal_handler: Signal (" << signum << ") received.\n";
+   cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
    //exit(signum);  
 }
 
@@ -38,7 +38,7 @@ void handle_conn(int socket) {
         buf.data_array = vector<unsigned char>(1024);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
-            cout << "fprocd-handle_conn: Client disconnected." << endl;
+            cout << "fprocd-handle_conn: Client disconnected" << endl;
             return;
         }
         unsigned char pckt_id = buf.get_u8();
@@ -66,7 +66,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist.");
+                    buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                 }
@@ -89,7 +89,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist.");
+                    buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                 }
@@ -124,7 +124,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist.");
+                    buf.put_utf8("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                 }
@@ -147,7 +147,7 @@ void maintain_procs() {
         data_mtx.lock();
         for (auto const& process : processes) {
             if (!process.second->child->running() && process.second->running) {
-                cout << "fprocd-maintain_procs: Process (" << process.first << ") died!" << endl;
+                cout << "fprocd-maintain_procs: Process (" << process.first << ") died" << endl;
                 process.second->child->join();
                 delete process.second->child;
                 process.second->child = new bp::child(process.second->command);
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        cout << "fprocd: Recieved new connection.\n";
+        cout << "fprocd: Recieved new connection\n";
         thread(handle_conn, new_socket).detach();
     }
     return 0;
