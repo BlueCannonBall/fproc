@@ -56,8 +56,8 @@ fn main() -> std::io::Result<()> {
                 }
             }
         },
-        None => println!("No subcommand was used"),
-        _ => println!("Some other subcommand was used"),
+        None => println!("fproc: The fproc cli cannot run the fproc server yet!"),
+        _ => println!("fproc: Error: Unknown option")
     }
 
     Ok(())
