@@ -83,7 +83,6 @@ void handle_conn(int socket) {
             } while(0); break;
             case 2:
             do {
-                cout << "retard" << endl;
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -124,7 +123,6 @@ void maintain_procs() {
     for (;;) {
         data_mtx.lock();
         for (auto const& process : processes) {
-            cout << process.second->running << endl;
             if (!process.second->child->running() && process.second->running) {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died!" << endl;
                 process.second->child->join();
