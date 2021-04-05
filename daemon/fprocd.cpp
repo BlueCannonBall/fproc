@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     if (argc > 1)
         socket_path = argv[1];
 
-    int server_fd, new_socket;
+    int server_fd, new_socket, len;
     struct sockaddr_un address;
     memset(&address, 0, sizeof(address));
        
@@ -194,7 +194,8 @@ int main(int argc, char **argv) {
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path)-1);
     //strcpy((char*) socket_path.c_str(), address.sun_path);
-       
+    
+    len = sizeof(address);
     if (bind(server_fd, (struct sockaddr*) &address, 
                                  sizeof(address))) {
         perror("bind failed");
@@ -209,7 +210,7 @@ int main(int argc, char **argv) {
     thread(maintain_procs).detach();
     for (;;) {
         if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
-                           (socklen_t*) sizeof(address)))) {
+                           (socklen_t*) &len))) {
             perror("accept");
             exit(EXIT_FAILURE);
         }
