@@ -47,8 +47,7 @@ void handle_conn(int socket) {
         }
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
-            case 0: // start
-            do {
+            case 0: { // run
                 Process *new_proc = new Process;
                 unsigned int id = uuid++;
                 new_proc->command = buf.get_utf8();
@@ -61,9 +60,9 @@ void handle_conn(int socket) {
                 processes[id] = new_proc;
                 new_proc->running = true;
                 data_mtx.unlock();
-            } while (0); break;
-            case 1: // delete
-            do {
+                break;
+            }
+            case 1: { // delete
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -85,9 +84,9 @@ void handle_conn(int socket) {
                 delete processes[id];
                 processes.erase(id);
                 data_mtx.unlock();
-            } while(0); break;
-            case 2: // stop
-            do {
+                break;
+            }
+            case 2: { // stop
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -106,9 +105,9 @@ void handle_conn(int socket) {
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = false;
                 data_mtx.unlock();
-            } while (0); break;
-            case 3: // list
-            do {
+                break;
+            }
+            case 3: { // list
                 data_mtx.lock();
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
@@ -121,9 +120,9 @@ void handle_conn(int socket) {
                 }
                 write(socket, buf.data_array.data(), buf.data_array.size());
                 data_mtx.unlock();
-            } while (0); break;
-            case 4: // start
-            do {
+                break;
+            }
+            case 4: { // start
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -144,7 +143,8 @@ void handle_conn(int socket) {
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = true;
                 data_mtx.unlock();
-            } while (0); break;
+                break;
+            }
         }
     }
 }
