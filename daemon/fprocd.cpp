@@ -56,7 +56,7 @@ void handle_conn(int socket) {
                 buf.offset = 0;
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
-                new_proc->child = new bp::child(new_proc->command);
+                new_proc->child = new bp::child(new_proc->command, bp::shell);
                 data_mtx.lock();
                 processes[id] = new_proc;
                 new_proc->running = true;
@@ -137,7 +137,7 @@ void handle_conn(int socket) {
                 }
                 processes[id]->child->terminate();
                 delete processes[id]->child;
-                processes[id]->child = new bp::child(processes[id]->command);
+                processes[id]->child = new bp::child(processes[id]->command, bp::shell);
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -157,7 +157,7 @@ void maintain_procs() {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died" << endl;
                 process.second->child->join();
                 delete process.second->child;
-                process.second->child = new bp::child(process.second->command);
+                process.second->child = new bp::child(process.second->command, bp::shell);
             }
         }
         data_mtx.unlock();
