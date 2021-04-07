@@ -32,6 +32,6 @@ SUBCOMMANDS:
 $ make
 # make install
 ```
-*Note that fproc daemon depends on boost.system*
+*Note that the fproc daemon depends on boost.system*
 
 *Note that `#` denotes a root shell, while `$` denotes a regular shell.*
