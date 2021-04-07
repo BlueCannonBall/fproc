@@ -31,6 +31,15 @@ unordered_map<unsigned int, Process*> processes;
 const char* home = getenv("HOME");
 string socket_path;
 
+unsigned int allocate_id() {
+    for (;;) {
+        uuid++;
+        if (processes.find(uuid) == processes.end()) {
+            return uuid;
+        }
+    }
+}
+
 void signal_handler(int signum) {
     cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
     if (signum != SIGPIPE) {
@@ -81,7 +90,7 @@ void handle_conn(int socket) {
                         delete processes[id];
                     }
                 } else {
-                    id = uuid++;
+                    id = allocate_id();
                 }
                 unsigned int env_size = buf.get_u32();
                 for (unsigned i = 0; i<env_size; i++) {

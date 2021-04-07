@@ -4,7 +4,7 @@ TARGET = fprocd
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).cpp
+$(TARGET): $(TARGET).cpp streampeerbuffer.hpp
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp
 
 clean:
