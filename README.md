@@ -9,7 +9,7 @@ After setting up cpu/memory limits for all the processes running on my server, I
 ## Usage
 ```
 $ fproc help
-fproc 
+fproc
 
 USAGE:
     fproc [SUBCOMMAND]
@@ -19,11 +19,12 @@ FLAGS:
     -V, --version    Prints version information
 
 SUBCOMMANDS:
-    delete    Delete a process
-    help      Prints this message or the help of the given subcommand(s)
-    list      List all managed processes.
-    run       Run a process
-    stop      Stop a process
+    delete     Delete a process
+    help       Prints this message or the help of the given subcommand(s)
+    list       List all managed processes.
+    restart    (Re)start a process
+    run        Run a process
+    stop       Stop a process
 ```
 
 ## Building & Installing
