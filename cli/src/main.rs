@@ -31,7 +31,11 @@ fn main() -> std::io::Result<()> {
                 .arg(
                     Arg::with_name("id")
                         .help("The id of the process to launch")
-                        .index(2)
+                        .required(false)
+                        .takes_value(true)
+                        .long("id")
+                        .short("i")
+                        .value_name("ID")
                 )
         )
         .subcommand(
@@ -158,8 +162,6 @@ fn main() -> std::io::Result<()> {
 
                     // current working directory
                     buf.put_utf8(env::current_dir().unwrap().to_string_lossy().as_ref().to_string());
-
-                    println!("fproc-run: Wrote {} bytes to socket", buf.cursor.get_ref().len());
 
                     // open socket
                     let mut stream = UnixStream::connect(socket_path).unwrap();
