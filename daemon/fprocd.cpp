@@ -54,13 +54,13 @@ void launch_process(Process* proc) {
     }
     vector<string> actual_command = {"sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
-    proc->child = new bp::child(bp::search_path("env"), command);
+    proc->child = new bp::child("/usr/bin/env", command);
 }
 
 void handle_conn(int socket) {
     for (;;) {
         spb::StreamPeerBuffer buf(true);
-        buf.data_array = vector<unsigned char>(1024);
+        buf.data_array = vector<unsigned char>(64000);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
             cout << "fprocd-handle_conn: Client disconnected" << endl;
@@ -204,6 +204,7 @@ void maintain_procs() {
 }
 
 int main(int argc, char **argv) {
+    cout << "fprocd: For help, run `fproc help`" << endl;
     signal(SIGPIPE, signal_handler);
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -213,7 +214,7 @@ int main(int argc, char **argv) {
     if (home) {
         socket_path = std::string(home) + "/.fproc.sock";
     } else {
-        cerr << "Failed to find HOME env var\n";
+        cerr << "fprocd: Error: Failed to find HOME env var\n";
         exit(EXIT_FAILURE);
     }
 
