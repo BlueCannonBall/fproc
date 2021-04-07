@@ -27,7 +27,12 @@ fn main() -> std::io::Result<()> {
                         .index(1)
                         .multiple(true)
                         .required(true),
-                ),
+                )
+                .arg(
+                    Arg::with_name("id")
+                        .help("The id of the process to launch")
+                        .index(2)
+                )
         )
         .subcommand(
             SubCommand::with_name("stop")
@@ -127,6 +132,34 @@ fn main() -> std::io::Result<()> {
                     let cmd: Vec<&str> = matches.values_of("command").unwrap().collect();
                     let cmd = cmd.join(" ");
                     buf.put_utf8(cmd);
+                    if matches.is_present("id") {
+                        buf.put_u8(1);
+                        let id = matches.value_of("id").unwrap();
+                        let id = match id.parse::<u32>() {
+                            Ok(v) => v,
+                            Err(_) => {
+                                println!("fproc-run: Error: Please supply a valid number for argument `id`");
+                                std::process::exit(1)
+                            }
+                        };
+                        buf.put_u32(id);
+                    } else {
+                        buf.put_u8(0);
+                    }
+
+                    // send current environment
+                    let variables = env::vars();
+                    let variables:Vec<_> = variables.collect();
+                    buf.put_u32(variables.len() as u32);
+                    for (key, value) in variables {
+                        buf.put_utf8(key);
+                        buf.put_utf8(value);
+                    }
+
+                    // current working directory
+                    buf.put_utf8(env::current_dir().unwrap().to_string_lossy().as_ref().to_string());
+
+                    println!("fproc-run: Wrote {} bytes to socket", buf.cursor.get_ref().len());
 
                     // open socket
                     let mut stream = UnixStream::connect(socket_path).unwrap();
