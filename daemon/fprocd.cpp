@@ -50,7 +50,7 @@ std::vector<std::string> string_split(const std::string& str) {
 void launch_process(Process* proc) {
     vector<string> command = {"-i", "--chdir=" + proc->working_dir};
     for (const auto& var : proc->env) {
-        command.push_back(var.first + var.second);
+        command.push_back(var.first + "=" + var.second);
     }
     vector<string> actual_command = {"sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
@@ -69,6 +69,7 @@ void handle_conn(int socket) {
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
             case 0: { // run
+                data_mtx.lock();
                 Process *new_proc = new Process;
                 new_proc->command = buf.get_utf8();
                 unsigned int id;
@@ -94,7 +95,6 @@ void handle_conn(int socket) {
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 launch_process(new_proc);
-                data_mtx.lock();
                 processes[id] = new_proc;
                 new_proc->running = true;
                 data_mtx.unlock();

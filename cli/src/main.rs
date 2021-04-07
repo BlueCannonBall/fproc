@@ -161,7 +161,8 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // current working directory
-                    buf.put_utf8(env::current_dir().unwrap().to_string_lossy().as_ref().to_string());
+                    let cwd = env::current_dir().unwrap().to_string_lossy().as_ref().to_string();
+                    buf.put_utf8(cwd);
 
                     // open socket
                     let mut stream = UnixStream::connect(socket_path).unwrap();
