@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -Wno-unused-result -s -O2 -pthread -lboost_system
+CFLAGS = -lboost_filesystem -lboost_system -Wall -Wno-unused-result -s -O2 -pthread
 TARGET = fprocd
 
 all: $(TARGET)

@@ -14,6 +14,7 @@
 
 using namespace std;
 namespace bp = boost::process;
+typedef unordered_map<string, string> Env;
 
 unsigned int uuid;
 
@@ -21,6 +22,8 @@ struct Process {
     std::string command;
     bp::child* child;
     bool running = true;
+    Env env;
+    string working_dir;
 };
 
 mutex data_mtx;
@@ -32,8 +35,26 @@ void signal_handler(int signum) {
     cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
-        exit(EXIT_FAILURE);
+        exit(signum);
     }
+}
+
+std::vector<std::string> string_split(const std::string& str) {
+    std::vector<std::string> result;
+    std::istringstream iss(str);
+    for (std::string s; iss >> s; )
+        result.push_back(s);
+    return result;
+}
+
+void launch_process(Process* proc) {
+    vector<string> command = {"-i", "--chdir=" + proc->working_dir};
+    for (const auto& var : proc->env) {
+        command.push_back(var.first + var.second);
+    }
+    vector<string> actual_command = {"sh", "-c", proc->command};
+    command.insert(command.end(), actual_command.begin(), actual_command.end());
+    proc->child = new bp::child(bp::search_path("env"), command);
 }
 
 void handle_conn(int socket) {
@@ -49,13 +70,30 @@ void handle_conn(int socket) {
         switch (pckt_id) {
             case 0: { // run
                 Process *new_proc = new Process;
-                unsigned int id = uuid++;
                 new_proc->command = buf.get_utf8();
+                unsigned int id;
+                if (buf.get_u8() == 1) {
+                    id = buf.get_u32();
+                    if (processes.find(id) != processes.end()) {
+                        processes[id]->child->terminate();
+                        delete processes[id]->child;
+                        delete processes[id];
+                    }
+                } else {
+                    id = uuid++;
+                }
+                unsigned int env_size = buf.get_u32();
+                for (unsigned i = 0; i<env_size; i++) {
+                    string key = buf.get_utf8();
+                    string value = buf.get_utf8();
+                    new_proc->env[key] = value;
+                }
+                new_proc->working_dir = buf.get_utf8();
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
-                new_proc->child = new bp::child(new_proc->command, bp::shell);
+                launch_process(new_proc);
                 data_mtx.lock();
                 processes[id] = new_proc;
                 new_proc->running = true;
@@ -136,7 +174,7 @@ void handle_conn(int socket) {
                 }
                 processes[id]->child->terminate();
                 delete processes[id]->child;
-                processes[id]->child = new bp::child(processes[id]->command, bp::shell);
+                launch_process(processes[id]);
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -157,7 +195,7 @@ void maintain_procs() {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died" << endl;
                 process.second->child->join();
                 delete process.second->child;
-                process.second->child = new bp::child(process.second->command, bp::shell);
+                launch_process(process.second);
             }
         }
         data_mtx.unlock();
