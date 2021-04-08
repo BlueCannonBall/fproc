@@ -44,9 +44,11 @@ void signal_handler(int signum) {
     cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
+        data_mtx.lock();
         for (const auto& process : processes) {
             process.second->child->terminate();
         }
+        data_mtx.unlock();
         exit(signum);
     }
 }
