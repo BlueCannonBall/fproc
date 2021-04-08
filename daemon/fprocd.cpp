@@ -45,6 +45,14 @@ void signal_handler(int signum, siginfo_t *siginfo, void *context) {
         (long) siginfo->si_pid << endl;
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
+        data_mtx.lock();
+        for (const auto& process : processes) {
+            unsigned int pid = process.second->child->id();
+            bp::system("pkill -TERM -P " + to_string(pid));
+            cout << "fprocd-signal_handler: Killed process "
+                << pid << endl;
+        }
+        data_mtx.unlock();
         exit(signum);
     }
 }
@@ -65,6 +73,7 @@ void launch_process(Process* proc) {
     vector<string> actual_command = {"sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
     proc->child = new bp::child("/usr/bin/env", command);
+    cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
 }
 
 void handle_conn(int socket) {
@@ -86,7 +95,7 @@ void handle_conn(int socket) {
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
                     if (processes.find(id) != processes.end()) {
-                        processes[id]->child->terminate();
+                        bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                         delete processes[id]->child;
                         delete processes[id];
                     }
@@ -122,7 +131,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -146,7 +155,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -182,7 +191,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 delete processes[id]->child;
                 launch_process(processes[id]);
                 buf.data_array = std::vector<unsigned char>();
