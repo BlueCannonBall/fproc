@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
     //strcpy((char*) socket_path.c_str(), address.sun_path);
     
     len = sizeof(address);
-    if (bind(server_fd, (struct sockaddr*) &address, 
+    if (::bind(server_fd, (struct sockaddr*) &address, 
                                  sizeof(address))) {
         perror("bind failed");
         exit(EXIT_FAILURE);
