@@ -40,8 +40,9 @@ unsigned int alloc_id() {
     }
 }
 
-void signal_handler(int signum) {
-    cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
+void signal_handler(int signum, siginfo_t *siginfo, void *context) {
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process" <<
+        (long) siginfo->si_pid << endl;
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
         data_mtx.lock();
@@ -219,11 +220,16 @@ void maintain_procs() {
 
 int main(int argc, char **argv) {
     cout << "fprocd: For help, run `fproc help`" << endl;
-    signal(SIGPIPE, signal_handler);
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-    signal(SIGQUIT, signal_handler);
-    signal(SIGHUP, signal_handler);
+
+    struct sigaction act;
+    memset(&act, '\0', sizeof(act));
+    act.sa_sigaction = &signal_handler;
+    act.sa_flags = SA_SIGINFO;
+    sigaction(SIGPIPE, &act, NULL);
+    sigaction(SIGINT, &act, NULL);
+    sigaction(SIGTERM, &act, NULL);
+    sigaction(SIGQUIT, &act, NULL);
+    sigaction(SIGHUP, &act, NULL);
 
     if (home) {
         socket_path = std::string(home) + "/.fproc.sock";
