@@ -41,15 +41,10 @@ unsigned int alloc_id() {
 }
 
 void signal_handler(int signum, siginfo_t *siginfo, void *context) {
-    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process" <<
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " <<
         (long) siginfo->si_pid << endl;
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
-        data_mtx.lock();
-        for (const auto& process : processes) {
-            process.second->child->terminate();
-        }
-        data_mtx.unlock();
         exit(signum);
     }
 }
