@@ -31,11 +31,11 @@ unordered_map<unsigned int, Process*> processes;
 const char* home = getenv("HOME");
 string socket_path;
 
-unsigned int allocate_id() {
+unsigned int alloc_id() {
     for (;;) {
         uuid++;
-        if (processes.find(uuid) == processes.end()) {
-            return uuid;
+        if (processes.find(uuid - 1) == processes.end()) {
+            return uuid - 1;
         }
     }
 }
@@ -90,7 +90,7 @@ void handle_conn(int socket) {
                         delete processes[id];
                     }
                 } else {
-                    id = allocate_id();
+                    id = alloc_id();
                 }
                 unsigned int env_size = buf.get_u32();
                 for (unsigned i = 0; i<env_size; i++) {
