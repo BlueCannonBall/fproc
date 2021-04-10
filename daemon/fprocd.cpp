@@ -31,19 +31,28 @@ unordered_map<unsigned int, Process*> processes;
 const char* home = getenv("HOME");
 string socket_path;
 
-unsigned int allocate_id() {
+unsigned int alloc_id() {
     for (;;) {
         uuid++;
-        if (processes.find(uuid) == processes.end()) {
-            return uuid;
+        if (processes.find(uuid - 1) == processes.end()) {
+            return uuid - 1;
         }
     }
 }
 
-void signal_handler(int signum) {
-    cout << "fprocd-signal_handler: Signal (" << signum << ") received\n";
+void signal_handler(int signum, siginfo_t *siginfo, void *context) {
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " <<
+        (long) siginfo->si_pid << endl;
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
+        data_mtx.lock();
+        for (const auto& process : processes) {
+            unsigned int pid = process.second->child->id();
+            bp::system("pkill -TERM -P " + to_string(pid));
+            cout << "fprocd-signal_handler: Killed process "
+                << pid << endl;
+        }
+        data_mtx.unlock();
         exit(signum);
     }
 }
@@ -64,6 +73,7 @@ void launch_process(Process* proc) {
     vector<string> actual_command = {"sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
     proc->child = new bp::child("/usr/bin/env", command);
+    cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
 }
 
 void handle_conn(int socket) {
@@ -85,12 +95,12 @@ void handle_conn(int socket) {
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
                     if (processes.find(id) != processes.end()) {
-                        processes[id]->child->terminate();
+                        bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                         delete processes[id]->child;
                         delete processes[id];
                     }
                 } else {
-                    id = allocate_id();
+                    id = alloc_id();
                 }
                 unsigned int env_size = buf.get_u32();
                 for (unsigned i = 0; i<env_size; i++) {
@@ -121,7 +131,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -145,7 +155,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -181,7 +191,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                processes[id]->child->terminate();
+                bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 delete processes[id]->child;
                 launch_process(processes[id]);
                 buf.data_array = std::vector<unsigned char>();
@@ -214,11 +224,16 @@ void maintain_procs() {
 
 int main(int argc, char **argv) {
     cout << "fprocd: For help, run `fproc help`" << endl;
-    signal(SIGPIPE, signal_handler);
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-    signal(SIGQUIT, signal_handler);
-    signal(SIGHUP, signal_handler);
+
+    struct sigaction act;
+    memset(&act, '\0', sizeof(act));
+    act.sa_sigaction = &signal_handler;
+    act.sa_flags = SA_SIGINFO;
+    sigaction(SIGPIPE, &act, NULL);
+    sigaction(SIGINT, &act, NULL);
+    sigaction(SIGTERM, &act, NULL);
+    sigaction(SIGQUIT, &act, NULL);
+    sigaction(SIGHUP, &act, NULL);
 
     if (home) {
         socket_path = std::string(home) + "/.fproc.sock";
@@ -244,7 +259,7 @@ int main(int argc, char **argv) {
     //strcpy((char*) socket_path.c_str(), address.sun_path);
     
     len = sizeof(address);
-    if (bind(server_fd, (struct sockaddr*) &address, 
+    if (::bind(server_fd, (struct sockaddr*) &address, 
                                  sizeof(address))) {
         perror("bind failed");
         exit(EXIT_FAILURE);
