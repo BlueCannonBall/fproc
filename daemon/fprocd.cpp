@@ -24,6 +24,7 @@ struct Process {
     bool running = true;
     Env env;
     string working_dir;
+    unsigned int restarts = 0;
 };
 
 mutex data_mtx;
@@ -174,6 +175,7 @@ void handle_conn(int socket) {
                     buf.put_utf8(process.second->command);
                     buf.put_u32(process.second->child->id());
                     buf.put_u8(process.second->running);
+                    buf.put_u32(process.second->restarts);
                 }
                 write(socket, buf.data_array.data(), buf.data_array.size());
                 data_mtx.unlock();
@@ -194,6 +196,7 @@ void handle_conn(int socket) {
                 bp::system("pkill -TERM -P " + to_string(processes[id]->child->id()));
                 delete processes[id]->child;
                 launch_process(processes[id]);
+                processes[id]->restarts++;
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -215,6 +218,7 @@ void maintain_procs() {
                 process.second->child->join();
                 delete process.second->child;
                 launch_process(process.second);
+                process.second->restarts++;
             }
         }
         data_mtx.unlock();
