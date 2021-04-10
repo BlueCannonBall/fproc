@@ -4,4 +4,5 @@ pub struct ManagedProcess {
     pub name: String,
     pub pid: u32,
     pub running: bool,
+    pub restarts: u32
 }

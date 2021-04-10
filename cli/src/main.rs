@@ -341,13 +341,14 @@ fn main() -> std::io::Result<()> {
                         name: buf.get_utf8(),
                         pid: buf.get_u32(),
                         running: buf.get_u8() != 0,
+                        restarts: buf.get_u32()
                     });
                 }
 
                 let mut table = Table::new();
-                table.add_row(row!["ID", "NAME", "PID", "RUNNING"]);
+                table.add_row(row!["ID", "NAME", "PID", "RUNNING", "RESTARTS"]);
                 for process in processes {
-                    table.add_row(row![process.id, process.name, process.pid, process.running]);
+                    table.add_row(row![process.id, process.name, process.pid, process.running, process.restarts]);
                 }
                 table.printstd();
             }
