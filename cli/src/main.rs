@@ -190,11 +190,13 @@ fn main() -> std::io::Result<()> {
         Some("stop") => {
             if let Some(matches) = matches.subcommand_matches("stop") {
                 if matches.is_present("id") {
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.put_u8(packet_ids::STOP);
+                    // open socket
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
 
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.put_u8(packet_ids::STOP);
                         let id = match id.parse::<u32>() {
                             Ok(v) => v,
                             Err(e) => {
@@ -203,110 +205,99 @@ fn main() -> std::io::Result<()> {
                             }
                         };
                         buf.put_u32(id);
+                        stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
+
+                        let mut read_buf = [0; 128];
+                        stream.read(&mut read_buf).unwrap();
+
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.set_data_array(read_buf.to_vec());
+
+                        let ok = buf.get_u8();
+                        if ok == 0 {
+                            println!("fproc-stop: Successfully stopped process \"{}\"", id);
+                        } else {
+                            println!("fproc-stop: Error ({}): {}", id, buf.get_utf8());
+                            std::process::exit(1);
+                        }
                     }
-
-                    // open socket
-                    let mut stream = UnixStream::connect(socket_path).unwrap();
-                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
-
-                    let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
-
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.set_data_array(read_buf.to_vec());
-
-                    let ok = buf.get_u8();
-                    if ok == 0 {
-                        let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
-                        let cmd = cmd.join(" ");
-                        println!("fproc-stop: Successfully stopped process(es) \"{}\"", cmd);
-                    } else {
-                        println!("fproc-stop: Error: {}", buf.get_utf8());
-                        std::process::exit(1);
-                    }
                 }
             }
         }
         Some("restart") => {
             if let Some(matches) = matches.subcommand_matches("restart") {
                 if matches.is_present("id") {
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.put_u8(packet_ids::START);
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
 
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.put_u8(packet_ids::START);
                         let id = match id.parse::<u32>() {
                             Ok(v) => v,
-                            Err(e) => {
+                            Err(_) => {
                                 println!("fproc-start: Error: Please supply a valid number");
                                 std::process::exit(1)
                             }
                         };
                         buf.put_u32(id);
+
+                        stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
+
+                        let mut read_buf = [0; 128];
+                        stream.read(&mut read_buf).unwrap();
+
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.set_data_array(read_buf.to_vec());
+
+                        let ok = buf.get_u8();
+                        if ok == 0 {
+                            println!("fproc-start: Successfully started process(es) \"{}\"", id);
+                        } else {
+                            println!("fproc-start: Error ({}): {}", id, buf.get_utf8());
+                            std::process::exit(1);
+                        }
                     }
-
-                    // open socket
-                    let mut stream = UnixStream::connect(socket_path).unwrap();
-                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
-
-                    let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.set_data_array(read_buf.to_vec());
-
-                    let ok = buf.get_u8();
-                    if ok == 0 {
-                        let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
-                        let cmd = cmd.join(" ");
-                        println!("fproc-start: Successfully started process(es) \"{}\"", cmd);
-                    } else {
-                        println!("fproc-stop: Error: {}", buf.get_utf8());
-                        std::process::exit(1);
-                    }
                 }
             }
         }
         Some("delete") => {
             if let Some(matches) = matches.subcommand_matches("delete") {
                 if matches.is_present("id") {
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.put_u8(packet_ids::DELETE);
+                    let mut stream = UnixStream::connect(socket_path).unwrap();
 
                     let cmd = matches.values_of("id").unwrap();
                     for id in cmd {
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.put_u8(packet_ids::DELETE);
                         let id = match id.parse::<u32>() {
                             Ok(v) => v,
-                            Err(e) => {
+                            Err(_) => {
                                 println!("fproc-delete: Error: Please supply a valid number");
                                 std::process::exit(1)
                             }
                         };
                         buf.put_u32(id);
+                        stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
+
+                        let mut read_buf = [0; 128];
+                        stream.read(&mut read_buf).unwrap();
+
+                        let mut buf = binary::StreamPeerBuffer::new();
+                        buf.set_data_array(read_buf.to_vec());
+
+                        let ok = buf.get_u8();
+                        if ok == 0 {
+                            println!("fproc-delete: Successfully deleted process(es) \"{}\"", id);
+                        } else {
+                            println!("fproc-delete: Error ({}): {}", id, buf.get_utf8());
+                            std::process::exit(1);
+                        }
                     }
-
-                    // open socket
-                    let mut stream = UnixStream::connect(socket_path).unwrap();
-                    stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
-
-                    let mut read_buf = [0; 128];
-                    stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
-
-                    let mut buf = binary::StreamPeerBuffer::new();
-                    buf.set_data_array(read_buf.to_vec());
-
-                    let ok = buf.get_u8();
-                    if ok == 0 {
-                        let cmd: Vec<&str> = matches.values_of("id").unwrap().collect();
-                        let cmd = cmd.join(" ");
-                        println!("fproc-delete: Successfully deleted process(es) \"{}\"", cmd);
-                    } else {
-                        println!("fproc-delete: Error: {}", buf.get_utf8());
-                        std::process::exit(1);
-                    }
                 }
             }
         }
