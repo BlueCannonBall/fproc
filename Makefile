@@ -5,3 +5,4 @@ all:
 install:
 		cp ./daemon/fprocd /usr/local/bin
 		cp ./cli/target/release/fproc /usr/local/bin
+		strip /usr/local/bin/fproc
