@@ -27,6 +27,14 @@ struct Process {
     unsigned int restarts = 0;
 };
 
+enum class Packet {
+    Run = 0,
+    Delete = 1,
+    Stop = 2,
+    List = 3,
+    Start = 4
+};
+
 mutex data_mtx;
 unordered_map<unsigned int, Process*> processes;
 const char* home = getenv("HOME");
@@ -88,7 +96,7 @@ void handle_conn(int socket) {
         }
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
-            case 0: { // run
+            case (int) Packet::Run: {
                 data_mtx.lock();
                 Process *new_proc = new Process;
                 new_proc->command = buf.get_utf8();
@@ -120,7 +128,7 @@ void handle_conn(int socket) {
                 data_mtx.unlock();
                 break;
             }
-            case 1: { // delete
+            case (int) Packet::Delete: { // delete
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -144,7 +152,7 @@ void handle_conn(int socket) {
                 data_mtx.unlock();
                 break;
             }
-            case 2: { // stop
+            case (int) Packet::Stop: {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {
@@ -165,7 +173,7 @@ void handle_conn(int socket) {
                 data_mtx.unlock();
                 break;
             }
-            case 3: { // list
+            case (int) Packet::List: {
                 data_mtx.lock();
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
@@ -181,7 +189,7 @@ void handle_conn(int socket) {
                 data_mtx.unlock();
                 break;
             }
-            case 4: { // start
+            case (int) Packet::Start: {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (processes.find(id) == processes.end()) {

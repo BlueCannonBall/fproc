@@ -1,2 +1,5 @@
 daemon/fprocd
 cli/target/
+daemon/compile_commands.json
+core
+daemon/core
