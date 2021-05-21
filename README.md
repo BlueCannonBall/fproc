@@ -38,4 +38,5 @@ $ make
 
 ### One-liner for Debian
 ```sh
-git clone https://github.com/BlueCannonBall/fproc && cd froc && sudo apt-get install libboost-all-dev -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && make && sudo make install```
+git clone https://github.com/BlueCannonBall/fproc && cd froc && sudo apt-get install libboost-all-dev -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && make && sudo make install
+```
