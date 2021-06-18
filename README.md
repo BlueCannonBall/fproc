@@ -38,5 +38,5 @@ $ make
 
 ### One-liner for Debian
 ```sh
-git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libboost-all-dev make -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
+git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
 ```
