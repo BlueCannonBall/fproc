@@ -10,6 +10,7 @@
 #include <boost/process.hpp>
 #include <signal.h>
 #include <chrono>
+#include <iomanip>
 #include "streampeerbuffer.hpp"
 
 using namespace std;
@@ -69,7 +70,7 @@ void signal_handler(int signum, siginfo_t *siginfo, void *context) {
 std::vector<std::string> string_split(const std::string& str) {
     std::vector<std::string> result;
     std::istringstream iss(str);
-    for (std::string s; iss >> s; )
+    for (std::string s; iss >> s;)
         result.push_back(s);
     return result;
 }
@@ -99,7 +100,7 @@ void handle_conn(int socket) {
             case (int) Packet::Run: {
                 data_mtx.lock();
                 Process *new_proc = new Process;
-                new_proc->command = buf.get_utf8();
+                new_proc->command = buf.get_string();
                 unsigned int id;
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
@@ -113,11 +114,11 @@ void handle_conn(int socket) {
                 }
                 unsigned int env_size = buf.get_u32();
                 for (unsigned i = 0; i<env_size; i++) {
-                    string key = buf.get_utf8();
-                    string value = buf.get_utf8();
+                    string key = buf.get_string();
+                    string value = buf.get_string();
                     new_proc->env[key] = value;
                 }
-                new_proc->working_dir = buf.get_utf8();
+                new_proc->working_dir = buf.get_string();
                 buf.data_array = std::vector<unsigned char>();
                 buf.offset = 0;
                 buf.put_u8(0);
@@ -135,7 +136,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist");
+                    buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
@@ -159,7 +160,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist");
+                    buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
@@ -180,7 +181,7 @@ void handle_conn(int socket) {
                 buf.put_u32(processes.size());
                 for (auto const& process : processes) {
                     buf.put_u32(process.first);
-                    buf.put_utf8(process.second->command);
+                    buf.put_string(process.second->command);
                     buf.put_u32(process.second->child->id());
                     buf.put_u8(process.second->running);
                     buf.put_u32(process.second->restarts);
@@ -196,7 +197,7 @@ void handle_conn(int socket) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
-                    buf.put_utf8("That process does not exist");
+                    buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
