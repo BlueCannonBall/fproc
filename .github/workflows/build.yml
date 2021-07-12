@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get install libboost-all-dev
     - name: Build
-      run: make -j
+      run: make -j && strip cli/target/release/fproc
     - uses: actions/upload-artifact@v2
       with:
         name: fproc
