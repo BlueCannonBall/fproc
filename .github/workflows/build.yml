@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get install libboost-all-dev
+    - name: Build
+      run: make -j
+    - uses: actions/upload-artifact@v2
+      with:
+        name: fproc
+        path: |
+          daemon/fprocd
+          cli/target/release/fproc
