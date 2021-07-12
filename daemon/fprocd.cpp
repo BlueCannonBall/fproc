@@ -43,8 +43,7 @@ string socket_path;
 
 unsigned int alloc_id() {
     for (;;) {
-        uid++;
-        if (processes.find(uid - 1) == processes.end()) {
+        if (processes.find(uid++) == processes.end()) {
             return uid - 1;
         }
     }
