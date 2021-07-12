@@ -5,5 +5,7 @@ TARGET = fprocd
 $(TARGET): $(TARGET).cpp streampeerbuffer.cpp streampeerbuffer.hpp
 	$(CC) $@.cpp streampeerbuffer.cpp $(CFLAGS) -o $(TARGET)
 
+.PHONY: clean
+
 clean:
 	$(RM) $(TARGET)
