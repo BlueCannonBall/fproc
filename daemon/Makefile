@@ -1,9 +1,9 @@
 CC = g++
-CFLAGS = -Wall -Wno-unused-result -s -Ofast -pthread -lboost_system
+CFLAGS = -Wall -Wno-unused-result -s -Ofast -static-libstdc++ -Wl,-Bstatic -lboost_system -Wl,-Bdynamic -pthread
 TARGET = fprocd
 
 $(TARGET): $(TARGET).cpp streampeerbuffer.hpp
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).cpp
+	$(CC) $@.cpp $(CFLAGS) -o $(TARGET)
 
 clean:
 	$(RM) $(TARGET)
