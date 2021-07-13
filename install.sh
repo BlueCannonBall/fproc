@@ -9,4 +9,4 @@ cp ./cli/target/release/fproc /usr/local/bin
 strip /usr/local/bin/fproc
 
 echo "Successfully installed fproc!"
-trap -
+trap - EXIT
