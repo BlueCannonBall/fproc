@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-trap "echo 'Failed to install fproc'" EXIT
+trap "echo 'Failed to install fproc :('" EXIT
 
 echo "Installing fproc..."
 
@@ -9,3 +9,4 @@ cp ./cli/target/release/fproc /usr/local/bin
 strip /usr/local/bin/fproc
 
 echo "Successfully installed fproc!"
+trap -
