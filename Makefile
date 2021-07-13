@@ -1,14 +1,12 @@
 all:
-		cd daemon && make
-		cd cli && cargo build --release
+	cd daemon && make
+	cd cli && cargo build --release
 
 .PHONY: install clean
 
 install:
-		cp ./daemon/fprocd /usr/local/bin
-		cp ./cli/target/release/fproc /usr/local/bin
-		strip /usr/local/bin/fproc
+	sh install.sh
 
 clean:
-		rm -rf ./daemon/fprocd
-		rm -rf ./cli/target
+	rm -rf ./daemon/fprocd
+	rm -rf ./cli/target

@@ -26,3 +26,4 @@ jobs:
         path: |
           daemon/fprocd
           cli/target/release/fproc
+          install.sh

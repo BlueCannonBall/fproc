@@ -14,6 +14,8 @@
 #include <iomanip>
 #include "streampeerbuffer.hpp"
 
+#define MESSAGE_SIZE 65536
+
 using namespace std;
 namespace bp = boost::process;
 typedef unordered_map<string, string> Env;
@@ -99,7 +101,7 @@ void launch_process(Process* proc) {
 void handle_conn(int socket) {
     for (;;) {
         spb::StreamPeerBuffer buf(true);
-        buf.data_array = vector<unsigned char>(64000);
+        buf.data_array = vector<uint8_t>(MESSAGE_SIZE);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
             cout << "fprocd-handle_conn: Client disconnected" << endl;
@@ -129,8 +131,7 @@ void handle_conn(int socket) {
                     new_proc->env[key] = value;
                 }
                 new_proc->working_dir = buf.get_string();
-                buf.data_array = std::vector<unsigned char>();
-                buf.offset = 0;
+                buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 launch_process(new_proc);
@@ -143,8 +144,7 @@ void handle_conn(int socket) {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
-                    buf.data_array = std::vector<unsigned char>();
-                    buf.offset = 0;
+                    buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
@@ -152,8 +152,7 @@ void handle_conn(int socket) {
                     break;
                 }
                 bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
-                buf.data_array = std::vector<unsigned char>();
-                buf.offset = 0;
+                buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = false;
@@ -167,8 +166,7 @@ void handle_conn(int socket) {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
-                    buf.data_array = std::vector<unsigned char>();
-                    buf.offset = 0;
+                    buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
@@ -176,8 +174,7 @@ void handle_conn(int socket) {
                     break;
                 }
                 bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
-                buf.data_array = std::vector<unsigned char>();
-                buf.offset = 0;
+                buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = false;
@@ -186,8 +183,7 @@ void handle_conn(int socket) {
             }
             case (int) Packet::List: {
                 data_mtx.lock();
-                buf.data_array = std::vector<unsigned char>();
-                buf.offset = 0;
+                buf.reset();
                 buf.put_u32(processes.size());
                 for (auto const& process : processes) {
                     buf.put_u32(process.first);
@@ -204,8 +200,7 @@ void handle_conn(int socket) {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
-                    buf.data_array = std::vector<unsigned char>();
-                    buf.offset = 0;
+                    buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
@@ -216,8 +211,7 @@ void handle_conn(int socket) {
                 delete processes[id]->child;
                 launch_process(processes[id]);
                 processes[id]->restarts++;
-                buf.data_array = std::vector<unsigned char>();
-                buf.offset = 0;
+                buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = true;
