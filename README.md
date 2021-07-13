@@ -32,7 +32,7 @@ SUBCOMMANDS:
 $ make
 # make install
 ```
-*Note that the fproc daemon depends on boost.system*
+*Note that the `fproc` daemon depends on boost.system*
 
 *Note that `#` denotes a root shell, while `$` denotes a regular shell.*
 
@@ -40,3 +40,6 @@ $ make
 ```sh
 git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
 ```
+
+## Downloading & Installing from GitHub Actions
+`fproc` has a GitHub action which automatically builds the daemon and CLI whenever `fproc` is updated. `fproc` can be installed from GitHub Actions by downloading the latest build artifacts and running the install script bundled with the artifacts.
