@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -16,6 +17,16 @@
 using namespace std;
 namespace bp = boost::process;
 typedef unordered_map<string, string> Env;
+
+template<class T1, class T2>
+inline bool in_map(T1& map, const T2& object) {
+    return map.find(object) != map.end();
+}
+
+template<class T1, class T2>
+inline bool in_vec(T1& vec, const T2& object) {
+    return find(vec.begin(), vec.end(), object) != vec.end();
+}
 
 unsigned int uid;
 
@@ -37,13 +48,13 @@ enum class Packet {
 };
 
 mutex data_mtx;
-unordered_map<unsigned int, Process*> processes;
+map<unsigned int, Process*> processes;
 const char* home = getenv("HOME");
 string socket_path;
 
 unsigned int alloc_id() {
     for (;;) {
-        if (processes.find(uid++) == processes.end()) {
+        if (!in_map(processes, uid++)) {
             return uid - 1;
         }
     }
@@ -103,7 +114,7 @@ void handle_conn(int socket) {
                 unsigned int id;
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
-                    if (processes.find(id) != processes.end()) {
+                    if (in_map(processes, id)) {
                         bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
                         delete processes[id]->child;
                         delete processes[id];
@@ -131,7 +142,7 @@ void handle_conn(int socket) {
             case (int) Packet::Delete: { // delete
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
-                if (processes.find(id) == processes.end()) {
+                if (!in_map(processes, id)) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
@@ -155,7 +166,7 @@ void handle_conn(int socket) {
             case (int) Packet::Stop: {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
-                if (processes.find(id) == processes.end()) {
+                if (!in_map(processes, id)) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
@@ -192,7 +203,7 @@ void handle_conn(int socket) {
             case (int) Packet::Start: {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
-                if (processes.find(id) == processes.end()) {
+                if (!in_map(processes, id)) {
                     buf.data_array = std::vector<unsigned char>();
                     buf.offset = 0;
                     buf.put_u8(1);
