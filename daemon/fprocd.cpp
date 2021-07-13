@@ -101,7 +101,7 @@ void launch_process(Process* proc) {
 void handle_conn(int socket) {
     for (;;) {
         spb::StreamPeerBuffer buf(true);
-        buf.data_array = vector<uint8_t>(MESSAGE_SIZE);
+        buf.data_array.resize(MESSAGE_SIZE);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
             cout << "fprocd-handle_conn: Client disconnected" << endl;
