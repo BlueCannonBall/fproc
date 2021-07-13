@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+trap "echo 'Failed to install fproc'" EXIT
 
 echo "Installing fproc..."
 
