@@ -1,5 +1,6 @@
+#![allow(unused_must_use)]
 use clap::{App, Arg, SubCommand};
-use prettytable::{cell, row, Cell, Row, Table};
+use prettytable::{cell, row, Table};
 use procfs::process::all_processes;
 
 use std::io::prelude::*;
@@ -199,7 +200,7 @@ fn main() -> std::io::Result<()> {
                         buf.put_u8(packet_ids::STOP);
                         let id = match id.parse::<u32>() {
                             Ok(v) => v,
-                            Err(e) => {
+                            Err(_) => {
                                 println!("fproc-stop: Error: Please supply a valid number");
                                 std::process::exit(1)
                             }
@@ -302,7 +303,7 @@ fn main() -> std::io::Result<()> {
             }
         }
         Some("list") => {
-            if let Some(matches) = matches.subcommand_matches("list") {
+            if let Some(_matches) = matches.subcommand_matches("list") {
                 let mut buf = binary::StreamPeerBuffer::new();
                 buf.put_u8(packet_ids::LIST);
 
