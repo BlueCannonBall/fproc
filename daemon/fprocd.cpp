@@ -62,21 +62,23 @@ unsigned int alloc_id() {
     }
 }
 
-void signal_handler(int signum, siginfo_t *siginfo, void *context) {
-    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " <<
-        (long) siginfo->si_pid << endl;
-    if (signum != SIGPIPE) {
-        unlink(socket_path.c_str());
-        data_mtx.lock();
-        for (const auto& process : processes) {
-            unsigned int pid = process.second->child->id();
-            bp::system("/usr/bin/pkill -TERM -P " + to_string(pid));
-            cout << "fprocd-signal_handler: Killed process "
-                << pid << endl;
-        }
-        data_mtx.unlock();
-        exit(signum);
+void launch_process(Process* proc) {
+    vector<string> command = {"-i", "--chdir=" + proc->working_dir};
+    for (const auto& var : proc->env) {
+        command.push_back(var.first + "=" + var.second);
     }
+    vector<string> actual_command = {"/bin/sh", "-c", proc->command};
+    command.insert(command.end(), actual_command.begin(), actual_command.end());
+    proc->child = new bp::child("/usr/bin/env", command,
+        bp::std_out > bp::null,
+        bp::std_in < bp::null,
+        bp::std_err > bp::null
+    );
+    cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
+}
+
+inline void kill_process(Process* proc) {
+    bp::system("/usr/bin/pkill -TERM -P" + to_string(proc->child->id()));
 }
 
 std::vector<std::string> string_split(const std::string& str) {
@@ -87,15 +89,21 @@ std::vector<std::string> string_split(const std::string& str) {
     return result;
 }
 
-void launch_process(Process* proc) {
-    vector<string> command = {"-i", "--chdir=" + proc->working_dir};
-    for (const auto& var : proc->env) {
-        command.push_back(var.first + "=" + var.second);
+void signal_handler(int signum, siginfo_t *siginfo, void *context) {
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " <<
+        (long) siginfo->si_pid << endl;
+    if (signum != SIGPIPE) {
+        unlink(socket_path.c_str());
+        data_mtx.lock();
+        for (const auto& process : processes) {
+            unsigned int pid = process.second->child->id();
+            kill_process(process.second);
+            cout << "fprocd-signal_handler: Killed process "
+                << pid << endl;
+        }
+        data_mtx.unlock();
+        exit(signum);
     }
-    vector<string> actual_command = {"/bin/sh", "-c", proc->command};
-    command.insert(command.end(), actual_command.begin(), actual_command.end());
-    proc->child = new bp::child("/usr/bin/env", command);
-    cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
 }
 
 void handle_conn(int socket) {
@@ -117,7 +125,7 @@ void handle_conn(int socket) {
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
                     if (in_map(processes, id)) {
-                        bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
+                        kill_process(processes[id]);
                         delete processes[id]->child;
                         delete processes[id];
                     }
@@ -140,7 +148,7 @@ void handle_conn(int socket) {
                 data_mtx.unlock();
                 break;
             }
-            case (int) Packet::Delete: { // delete
+            case (int) Packet::Delete: {
                 unsigned int id = buf.get_u32();
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
@@ -151,7 +159,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
+                kill_process(processes[id]);
                 buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
@@ -173,7 +181,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
+                kill_process(processes[id]);
                 buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
@@ -185,7 +193,7 @@ void handle_conn(int socket) {
                 data_mtx.lock();
                 buf.reset();
                 buf.put_u32(processes.size());
-                for (auto const& process : processes) {
+                for (const auto& process : processes) {
                     buf.put_u32(process.first);
                     buf.put_string(process.second->command);
                     buf.put_u32(process.second->child->id());
@@ -207,7 +215,7 @@ void handle_conn(int socket) {
                     data_mtx.unlock();
                     break;
                 }
-                bp::system("/usr/bin/pkill -TERM -P " + to_string(processes[id]->child->id()));
+                kill_process(processes[id]);
                 delete processes[id]->child;
                 launch_process(processes[id]);
                 processes[id]->restarts++;
@@ -225,7 +233,7 @@ void handle_conn(int socket) {
 void maintain_procs() {
     for (;;) {
         data_mtx.lock();
-        for (auto const& process : processes) {
+        for (const auto& process : processes) {
             if (!process.second->child->running() && process.second->running) {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died" << endl;
                 process.second->child->join();
@@ -273,7 +281,6 @@ int main(int argc, char **argv) {
 
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path)-1);
-    //strcpy((char*) socket_path.c_str(), address.sun_path);
     
     len = sizeof(address);
     if (::bind(server_fd, (struct sockaddr*) &address, 
