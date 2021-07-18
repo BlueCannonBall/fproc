@@ -96,17 +96,17 @@ impl StreamPeerBuffer {
     }
 
     pub fn get_varint_mc(&mut self) -> i32 {
-        let mut numRead: i32 = 0;
+        let mut num_read: i32 = 0;
         let mut result: i32 = 0;
         let mut read: u8 = 255;
 
         while (read & 0b10000000) != 0 {
             read = self.get_u8();
             let value: i32 = (read & 0b01111111) as i32;
-            result = result | (value << (7 * numRead));
+            result = result | (value << (7 * num_read));
 
-            numRead += 1;
-            if numRead > 5 {
+            num_read += 1;
+            if num_read > 5 {
                 panic!("VarInt is too big");
             }
         }
