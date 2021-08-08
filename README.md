@@ -6,8 +6,7 @@
 [![forthebadge](https://forthebadge.com/images/badges/check-it-out.svg)](https://forthebadge.com)
 
 
-<img src="https://img.shields.io/tokei/lines/github/BlueCannonBall/fproc?color=green&label=L%20o%C">
-<img src="https://img.shields.io/github/license/BlueCannonBall/fproc?color=blue">
+<img src="https://img.shields.io/github/license/BlueCannonBall/fproc?color=blue"> <img src="https://img.shields.io/tokei/lines/github/BlueCannonBall/fproc?color=green&label=LoC">
 
 # `fproc`
 A process manager for Linux written in C++ and Rust.
