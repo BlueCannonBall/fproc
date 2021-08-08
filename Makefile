@@ -1,7 +1,7 @@
 all:
-	cd daemon && make
-	cd cli && make
-	cd gui && make
+	cd daemon && make -j
+	cd cli && make -j
+	cd gui && make -j
 
 .PHONY: install clean
 
