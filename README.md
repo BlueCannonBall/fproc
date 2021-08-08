@@ -5,6 +5,9 @@
 [![forthebadge](https://forthebadge.com/images/badges/designed-in-inkscape.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/check-it-out.svg)](https://forthebadge.com)
 
+
+<img src="https://img.shields.io/tokei/lines/github/BlueCannonBall/fproc?color=white&label=lines%20of%20code">
+
 # `fproc`
 A process manager for Linux written in C++ and Rust.
 
