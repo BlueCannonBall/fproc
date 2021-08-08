@@ -44,7 +44,11 @@ $ make
 
 ### One-liner for Debian
 ```sh
-git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd ..
+<<<<<<< HEAD
+git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
+=======
+git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd ..
+>>>>>>> 0eda005fce8e49a410b2114bec5147ac638d72f7
 ```
 
 ## Downloading & Installing from GitHub Actions
