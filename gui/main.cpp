@@ -89,7 +89,8 @@ Result run_process(const string& name, unsigned int id = 0, bool custom_id = fal
     unordered_map<string, string> environ_map;
     for (char** var = environ; *var != 0; var++) {
         vector<string> var_pair;
-        boost::split(var_pair, string(*var), boost::is_any_of("="));
+        std::string var_str(*var);
+        boost::split(var_pair, var_str, boost::is_any_of("="));
         environ_map[var_pair[0]] = var_pair[1];
     }
     buf.put_u32(environ_map.size());
