@@ -36,15 +36,22 @@ SUBCOMMANDS:
 ```
 
 ## Building & Installing
+
+When run from the root folder of the repo, the commands below compile and install the `fproc` daemon, CLI, and GUI.
 ```
 $ make
 # make install
 ```
 *Note that the `fproc` daemon depends on the Boost C++ Libraries*
 
+*Note that the `fproc` GUI depends on the Boost C++ Libraries and GTK 3*
+
 *Note that `#` denotes a root shell, while `$` denotes a regular shell.*
 
 ### One-liner for Debian
+
+The command below compiles and installs the `fproc` daemon, CLI, and GUI on Debian systems.
+
 ```sh
 git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd ..
 ```
