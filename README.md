@@ -1,4 +1,10 @@
 ![alt text](https://raw.githubusercontent.com/BlueCannonBall/fproc/main/fproc.png)
+[![forthebadge](https://forthebadge.com/images/badges/made-with-c-plus-plus.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/made-with-rust.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/designed-in-inkscape.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/open-source.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/check-it-out.svg)](https://forthebadge.com)
 
 # `fproc`
 A process manager for Linux written in C++ and Rust.
@@ -6,7 +12,7 @@ A process manager for Linux written in C++ and Rust.
 ## Motivation
 After setting up cpu/memory limits for all the processes running on my server, I was astonished to find that the memory usage was still over 120 mb. After doing some probing, I found that `pm2`, a process manager, was using more CPU/memory than all my services combined!
 
-## Usage
+## Usage (CLI)
 ```
 $ fproc help
 fproc
@@ -32,13 +38,13 @@ SUBCOMMANDS:
 $ make
 # make install
 ```
-*Note that the `fproc` daemon depends on boost.system*
+*Note that the `fproc` daemon depends on the Boost C++ Libraries*
 
 *Note that `#` denotes a root shell, while `$` denotes a regular shell.*
 
 ### One-liner for Debian
 ```sh
-git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
+git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd
 ```
 
 ## Downloading & Installing from GitHub Actions

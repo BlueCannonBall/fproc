@@ -1,6 +1,7 @@
 all:
 	cd daemon && make
-	cd cli && cargo build --release
+	cd cli && make
+	cd gui && make
 
 .PHONY: install clean
 
@@ -8,5 +9,5 @@ install:
 	sh install.sh
 
 clean:
-	rm -rf ./daemon/fprocd
+	rm -f ./daemon/fprocd
 	rm -rf ./cli/target

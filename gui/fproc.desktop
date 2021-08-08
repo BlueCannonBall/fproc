@@ -1,0 +1,7 @@
+[Desktop Entry]
+
+Type=Application
+Terminal=false
+Exec=/usr/local/bin/fproc-gui
+Name=Fproc
+Icon=/usr/local/share/icons/hicolor/48x48/apps/fproc.png

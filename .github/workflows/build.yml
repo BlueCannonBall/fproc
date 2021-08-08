@@ -17,13 +17,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get install libboost-all-dev
+      run: sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev
     - name: Build
-      run: make -j && strip cli/target/release/fproc
+      run: make -j
     - uses: actions/upload-artifact@v2
       with:
         name: fproc
         path: |
           daemon/fprocd
           cli/target/release/fproc
+          gui/fproc-gui
+          gui/fproc.desktop
+          icon.png
           install.sh

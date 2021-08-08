@@ -2,10 +2,13 @@ CC = g++
 CFLAGS = -Wall -Wno-unused-result -s -Ofast -static-libstdc++ -Wl,-Bstatic -lboost_system -Wl,-Bdynamic -lpthread
 TARGET = fprocd
 
-$(TARGET): $(TARGET).cpp streampeerbuffer.cpp streampeerbuffer.hpp
-	$(CC) $@.cpp streampeerbuffer.cpp $(CFLAGS) -o $(TARGET)
+$(TARGET): main.cpp streampeerbuffer.cpp streampeerbuffer.hpp
+	$(CC) $< streampeerbuffer.cpp $(CFLAGS) -o $@
 
-.PHONY: clean
+.PHONY: clean install
+
+install:
+	cp ./fprocd /usr/local/bin
 
 clean:
-	$(RM) $(TARGET)
+	rm -f $(TARGET)

@@ -12,9 +12,11 @@
 #include <signal.h>
 #include <chrono>
 #include <iomanip>
+#include <memory>
 #include "streampeerbuffer.hpp"
 
 #define MESSAGE_SIZE 65536
+#define BACKLOG 128
 
 using namespace std;
 namespace bp = boost::process;
@@ -34,7 +36,7 @@ unsigned int uid;
 
 struct Process {
     std::string command;
-    bp::child* child;
+    unique_ptr<bp::child> child;
     bool running = true;
     Env env;
     string working_dir;
@@ -69,11 +71,11 @@ void launch_process(Process* proc) {
     }
     vector<string> actual_command = {"/bin/sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
-    proc->child = new bp::child("/usr/bin/env", command,
+    proc->child = std::move(make_unique<bp::child>("/usr/bin/env", command,
         bp::std_out > bp::null,
         bp::std_in < bp::null,
         bp::std_err > bp::null
-    );
+    ));
     cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
 }
 
@@ -112,9 +114,10 @@ void handle_conn(int socket) {
         buf.data_array.resize(MESSAGE_SIZE);
         int valread = read(socket, buf.data_array.data(), buf.data_array.size());
         if (valread == 0) {
-            cout << "fprocd-handle_conn: Client disconnected" << endl;
+            cout << "fprocd-handle_conn: Client disconnected\n";
             return;
         }
+        buf.data_array.resize(valread);
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
             case (int) Packet::Run: {
@@ -126,7 +129,6 @@ void handle_conn(int socket) {
                     id = buf.get_u32();
                     if (in_map(processes, id)) {
                         kill_process(processes[id]);
-                        delete processes[id]->child;
                         delete processes[id];
                     }
                 } else {
@@ -164,7 +166,6 @@ void handle_conn(int socket) {
                 buf.put_u8(0);
                 write(socket, buf.data_array.data(), 1);
                 processes[id]->running = false;
-                delete processes[id]->child;
                 delete processes[id];
                 processes.erase(id);
                 data_mtx.unlock();
@@ -216,7 +217,6 @@ void handle_conn(int socket) {
                     break;
                 }
                 kill_process(processes[id]);
-                delete processes[id]->child;
                 launch_process(processes[id]);
                 processes[id]->restarts++;
                 buf.reset();
@@ -235,9 +235,8 @@ void maintain_procs() {
         data_mtx.lock();
         for (const auto& process : processes) {
             if (!process.second->child->running() && process.second->running) {
-                cout << "fprocd-maintain_procs: Process (" << process.first << ") died" << endl;
+                cout << "fprocd-maintain_procs: Process (" << process.first << ") died\n";
                 process.second->child->join();
-                delete process.second->child;
                 launch_process(process.second);
                 process.second->restarts++;
             }
@@ -248,7 +247,7 @@ void maintain_procs() {
 }
 
 int main(int argc, char **argv) {
-    cout << "fprocd: For help, run `fproc help`" << endl;
+    cout << "fprocd: For help, run `fproc help`\n";
 
     struct sigaction act;
     memset(&act, '\0', sizeof(act));
@@ -260,36 +259,35 @@ int main(int argc, char **argv) {
     sigaction(SIGQUIT, &act, NULL);
     sigaction(SIGHUP, &act, NULL);
 
-    if (home) {
+    if (argc > 1) {
+        socket_path = argv[1];
+    } else if (home) {
         socket_path = std::string(home) + "/.fproc.sock";
     } else {
-        cerr << "fprocd: Error: Failed to find HOME env var\n";
+        cerr << "fprocd: Error: Failed to find HOME environment variable\n";
         exit(EXIT_FAILURE);
     }
-
-    if (argc > 1)
-        socket_path = argv[1];
 
     int server_fd, new_socket, len;
     struct sockaddr_un address;
     memset(&address, 0, sizeof(address));
        
     if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        perror("socket failed");
+        perror("socket(2)");
         exit(EXIT_FAILURE);
     }
 
     address.sun_family = AF_UNIX;
-    strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path)-1);
+    strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path) - 1);
     
     len = sizeof(address);
     if (::bind(server_fd, (struct sockaddr*) &address, 
                                  sizeof(address))) {
-        perror("bind failed");
+        perror("bind(2)");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 5) < 0) {
-        perror("listen");
+    if (listen(server_fd, BACKLOG) < 0) {
+        perror("listen(2)");
         exit(EXIT_FAILURE);
     }
 
@@ -298,7 +296,7 @@ int main(int argc, char **argv) {
     for (;;) {
         if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
                            (socklen_t*) &len)) == -1) {
-            perror("accept");
+            perror("accept(2)");
             exit(EXIT_FAILURE);
         }
         cout << "fprocd: Recieved new connection\n";
