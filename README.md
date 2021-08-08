@@ -44,7 +44,7 @@ $ make
 ```
 *Note that the `fproc` daemon depends on the Boost C++ Libraries*
 
-*Note that the `fproc` GUI depends on the Boost C++ Libraries and GTK 3*
+*Note that the `fproc` GUI depends on the Boost C++ Libraries and gtkmm 3.0*
 
 *Note that `#` denotes a root shell, while `$` denotes a regular shell.*
 
