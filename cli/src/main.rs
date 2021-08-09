@@ -90,7 +90,7 @@ fn main() -> std::io::Result<()> {
     let home = match home {
         Ok(home) => home,
         Err(_) => {
-            println!("fproc: Error: HOME not present in environment");
+            println!("fproc: Error: HOME variable not present in environment");
             std::process::exit(1)
         }
     };

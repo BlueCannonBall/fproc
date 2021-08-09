@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
     } else if (home) {
         socket_path = std::string(home) + "/.fproc.sock";
     } else {
-        cerr << "fprocd: Error: Failed to find HOME environment variable\n";
+        cerr << "fprocd: Error: HOME variable not present in environment\n";
         exit(EXIT_FAILURE);
     }
 

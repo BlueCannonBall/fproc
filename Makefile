@@ -9,5 +9,5 @@ install:
 	sh install.sh
 
 clean:
-	rm -f ./daemon/fprocd
-	rm -rf ./cli/target
+	rm -f ./daemon/fprocd ./gui/fproc-gui
+	rm -rf ./cli/target ./gui/obj

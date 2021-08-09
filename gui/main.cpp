@@ -12,11 +12,19 @@
 #include <unordered_map>
 #include <array>
 #include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <atomic>
+#include <boost/process.hpp>
+#include <thread>
+#include <chrono>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "streampeerbuffer.hpp"
 
 #define MESSAGE_SIZE 65536
 
 using namespace std;
+namespace bp = boost::process;
 
 int argc;
 char** argv;
@@ -63,6 +71,20 @@ struct Process {
     }
 };
 
+int is_file(const char *path) {
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISREG(path_stat.st_mode);
+}
+
+bool is_number(string s) {
+    for (unsigned i = 0; i < s.length(); i++)
+        if (isdigit(s[i]) == false)
+            return false;
+
+    return true;
+}
+
 int open_fproc_sock() {
     string socket_path;
     if (argc > 1) {
@@ -70,7 +92,7 @@ int open_fproc_sock() {
     } else if (home) {
         socket_path = string(home) + "/.fproc.sock";
     } else {
-        cout << "fproc-gui-open_fproc_socket: Error: Failed to find HOME environment variable\n";
+        cout << "fproc-gui-open_fproc_socket: Error: HOME variable not present in environment\n";
         exit(EXIT_FAILURE);
     }
 
@@ -348,6 +370,7 @@ class FprocGUI: public Gtk::Window {
     public:
         FprocGUI() {
             this->set_title("FprocGUI");
+            this->set_default_size(640, 204);
 
             hbox.pack_end(vbox, false, true, 0);
             hbox.set_margin_top(10);
@@ -518,6 +541,48 @@ class FprocGUI: public Gtk::Window {
 int main(int argc, char** argv) {
     ::argc = argc;
     ::argv = argv;
+
+    std::vector<string> procfs_folders;
+    DIR* procdir = opendir("/proc");
+    struct dirent* entry;
+    while ((entry = readdir(procdir))) {
+        if (is_file(entry->d_name) == 0 && is_number(entry->d_name)) {
+            if (getpid() != atoi(entry->d_name))
+                procfs_folders.push_back(std::string(entry->d_name));       
+        }
+    }
+    closedir(procdir);
+
+    bool found_process = false;
+    for (unsigned process = 0; process<procfs_folders.size(); process++) {
+        struct stat statbuf;
+        if (stat(("/proc/" + procfs_folders[process]).c_str(), &statbuf) == 0) {
+            if (getuid() == statbuf.st_uid) {
+                ifstream comm_file("/proc/" + procfs_folders[process] + "/comm");
+                string comm((std::istreambuf_iterator<char>(comm_file)),
+                    std::istreambuf_iterator<char>());
+
+                if (comm == "fprocd") {
+                    found_process = true;
+                    break;
+                }
+            }
+        } else {
+            perror("stat(2)");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!found_process) {
+        cout << "fproc-gui: Started daemon\n";
+        bp::child(
+            "fprocd",
+            bp::std_out > bp::null,
+            bp::std_in < bp::null,
+            bp::std_err > bp::null
+        ).detach();
+        this_thread::sleep_for(chrono::milliseconds(500));
+    }
 
     auto app = Gtk::Application::create(argc, argv, "org.fproc.gui");
     FprocGUI fproc;

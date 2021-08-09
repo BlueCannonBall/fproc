@@ -1,10 +1,10 @@
 CC = g++
-CFLAGS = -Wall -Wno-unused-result -s -O3 `pkg-config gtkmm-3.0 --cflags`
+CFLAGS = -Wall -Wno-unused-result -s -O3 -pthread -Wl,-Bstatic -lboost_system `pkg-config gtkmm-3.0 --cflags`
 OBJDIR = obj
 TARGET = fproc-gui
 
 $(TARGET): $(OBJDIR)/main.o $(OBJDIR)/streampeerbuffer.o
-	$(CC) $^ $(CFLAGS) `pkg-config gtkmm-3.0 --libs` -o $@
+	$(CC) $^ $(CFLAGS) -Wl,-Bdynamic `pkg-config gtkmm-3.0 --libs` -o $@
 
 $(OBJDIR)/main.o: main.cpp streampeerbuffer.hpp
 	@mkdir -p $(OBJDIR)
