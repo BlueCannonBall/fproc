@@ -584,7 +584,6 @@ int main(int argc, char** argv) {
             }
         } else {
             perror("stat(2)");
-            exit(EXIT_FAILURE);
         }
     }
 
