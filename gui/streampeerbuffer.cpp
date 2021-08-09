@@ -1,1 +1,1 @@
-/home/optimal/Desktop/mm_files/cpp/fproc/daemon/streampeerbuffer.cpp
+../daemon/streampeerbuffer.cpp
