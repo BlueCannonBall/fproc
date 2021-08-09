@@ -22,5 +22,7 @@ clean:
 
 install:
 	cp $(TARGET) /usr/local/bin
+	mkdir -p /usr/local/share/applications
 	cp fproc.desktop /usr/local/share/applications
+	mkdir -p /usr/local/share/icons/hicolor/48x48/apps
 	cp ../icon.png /usr/local/share/icons/hicolor/48x48/apps/fproc.png
