@@ -376,7 +376,7 @@ class FprocGUI: public Gtk::Window {
     public:
         FprocGUI() {
             this->set_title("Fproc");
-            this->set_default_size(640, 204);
+            this->set_default_size(640, 480);
 
             hbox.pack_end(vbox, false, true, 0);
             hbox.set_margin_top(10);
