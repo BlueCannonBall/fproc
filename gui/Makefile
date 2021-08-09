@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -O3 -pthread -Wl,-Bstatic -lboost_system `pkg-config gtkmm-3.0 --cflags`
+CFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -O3 -pthread -fopenmp -Wl,-Bstatic -lboost_system `pkg-config gtkmm-3.0 --cflags`
 OBJDIR = obj
 TARGET = fproc-gui
 

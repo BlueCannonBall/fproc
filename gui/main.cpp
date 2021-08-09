@@ -564,8 +564,12 @@ int main(int argc, char** argv) {
     }
     closedir(procdir);
 
-    bool found_process = false;
+    atomic<bool> found_process(false);
+    #pragma omp parallel for simd shared(found_process)
     for (unsigned process = 0; process<procfs_folders.size(); process++) {
+        if (found_process)
+            continue;
+
         struct stat statbuf;
         if (stat(("/proc/" + procfs_folders[process]).c_str(), &statbuf) == 0) {
             if (getuid() == statbuf.st_uid) {
@@ -575,7 +579,7 @@ int main(int argc, char** argv) {
 
                 if (comm == "fprocd") {
                     found_process = true;
-                    break;
+                    continue;
                 }
             }
         } else {
