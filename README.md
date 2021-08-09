@@ -53,7 +53,7 @@ $ make
 The command below compiles and installs the `fproc` daemon, CLI, and GUI on Debian systems.
 
 ```sh
-git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make && sudo make install && cd ..
+git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get install libgtk-3-0 libgtkmm-3.0-dev libboost-all-dev build-essential -y && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source ~/.cargo/env && make -j && sudo make install && cd ..
 ```
 
 ## Downloading & Installing from GitHub Actions

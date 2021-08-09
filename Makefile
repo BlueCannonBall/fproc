@@ -1,9 +1,13 @@
-all:
-	cd daemon && make -j
-	cd cli && make -j
-	cd gui && make -j
+all: daemon cli gui
 
-.PHONY: install clean
+.PHONY: install clean daemon cli gui
+
+daemon:
+	cd $@ && make -j
+cli:
+	cd $@ && make -j
+gui:
+	cd $@ && make -j
 
 install:
 	sh install.sh
