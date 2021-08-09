@@ -464,8 +464,10 @@ class FprocGUI: public Gtk::Window {
             stop_btn.set_sensitive(row[columns.running]);
             if (row[columns.running]) {
                 start_btn.set_label("Restart");
+                start_btn.set_image_from_icon_name("media-seek-backward");
             } else {
                 start_btn.set_label("Start");
+                start_btn.set_image_from_icon_name("media-playback-start");
             }
         }
 
