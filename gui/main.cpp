@@ -38,7 +38,7 @@ enum class Packet {
     Start = 4
 };
 
-struct Result {
+struct Error {
     int code = 0;
     string error;
 };
@@ -116,7 +116,7 @@ int open_fproc_sock() {
     }
 }
 
-Result run_process(const string& name, const string& working_dir, unsigned int id = 0, bool custom_id = false) {
+Error run_process(const string& name, const string& working_dir, unsigned int id = 0, bool custom_id = false) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Run);
@@ -141,10 +141,10 @@ Result run_process(const string& name, const string& working_dir, unsigned int i
     buf.put_string(working_dir);
     write(sock, buf.data(), buf.size());
     close(sock);
-    return Result{};
+    return Error{};
 }
 
-Result delete_process(unsigned int id) {
+Error delete_process(unsigned int id) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Delete);
@@ -156,7 +156,7 @@ Result delete_process(unsigned int id) {
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-delete_process: Error: Server disconnected\n";
-        return Result{1, "Server disconnected"};
+        return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
     close(sock);
@@ -167,10 +167,10 @@ Result delete_process(unsigned int id) {
         error = buf.get_string();
         cout << "fproc-gui-delete_process: Error: " << error << endl;
     }
-    return Result{code, error};
+    return Error{code, error};
 }
 
-Result stop_process(unsigned int id) {
+Error stop_process(unsigned int id) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Stop);
@@ -182,7 +182,7 @@ Result stop_process(unsigned int id) {
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-stop_process: Error: Server disconnected\n";
-        return Result{1, "Server disconnected"};
+        return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
     close(sock);
@@ -193,10 +193,10 @@ Result stop_process(unsigned int id) {
         error = buf.get_string();
         cout << "fproc-gui-stop_process: Error: " << error << endl;
     }
-    return Result{code, error};
+    return Error{code, error};
 }
 
-Result get_processes(vector<Process>& processes) {
+Error get_processes(vector<Process>& processes) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Get);
@@ -207,7 +207,7 @@ Result get_processes(vector<Process>& processes) {
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-get_processes: Error: Server disconnected\n";
-        return Result{1, "Server disconnected"};
+        return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
     close(sock);
@@ -222,10 +222,10 @@ Result get_processes(vector<Process>& processes) {
         process.restarts = buf.get_u32();
         processes.push_back(process);
     }
-    return Result{0};
+    return Error{0};
 }
 
-Result start_process(unsigned int id) {
+Error start_process(unsigned int id) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Start);
@@ -237,7 +237,7 @@ Result start_process(unsigned int id) {
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-start_process: Error: Server disconnected\n";
-        return Result{1, "Server disconnected"};
+        return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
     close(sock);
@@ -248,7 +248,7 @@ Result start_process(unsigned int id) {
         error = buf.get_string();
         cout << "fproc-gui-start_process: Error: " << error << endl;
     }
-    return Result{code, error};
+    return Error{code, error};
 }
 
 class FprocModelColumns: public Gtk::TreeModel::ColumnRecord {
@@ -342,14 +342,14 @@ class RunDialog: public Gtk::Dialog {
 
         void on_dialog_response(int response_id) {
             if (response_id) {
-                Result result;
+                Error error;
                 if (id_entry.get_text().size() == 0) {
-                    result = run_process(
+                    error = run_process(
                         command_entry.get_text(),
                         working_dir_entry.get_filename()
                     );
                 } else {
-                    result = run_process(
+                    error = run_process(
                         command_entry.get_text(),
                         working_dir_entry.get_filename(),
                         atoi(id_entry.get_text().c_str()),
@@ -357,10 +357,10 @@ class RunDialog: public Gtk::Dialog {
                     );
                 }
 
-                if (result.code) {
+                if (error.code) {
                     Gtk::MessageDialog error_dialog(
                         *this,
-                        result.error,
+                        error.error,
                         false,
                         Gtk::MESSAGE_ERROR,
                         Gtk::BUTTONS_OK,
@@ -494,11 +494,11 @@ class FprocGUI: public Gtk::Window {
         void on_start_clicked() {
             auto row = *(treeview.get_selection()->get_selected());
 
-            Result result = start_process(row[columns.id]);
-            if (result.code) {
+            Error error = start_process(row[columns.id]);
+            if (error.code) {
                 Gtk::MessageDialog error_dialog(
                     *this,
-                    result.error,
+                    error.error,
                     false,
                     Gtk::MESSAGE_ERROR,
                     Gtk::BUTTONS_OK,
@@ -513,11 +513,11 @@ class FprocGUI: public Gtk::Window {
         void on_stop_clicked() {
             auto row = *(treeview.get_selection()->get_selected());
 
-            Result result = stop_process(row[columns.id]);
-            if (result.code) {
+            Error error = stop_process(row[columns.id]);
+            if (error.code) {
                 Gtk::MessageDialog error_dialog(
                     *this,
-                    result.error,
+                    error.error,
                     false,
                     Gtk::MESSAGE_ERROR,
                     Gtk::BUTTONS_OK,
@@ -532,11 +532,11 @@ class FprocGUI: public Gtk::Window {
         void on_delete_clicked() {
             auto row = *(treeview.get_selection()->get_selected());
 
-            Result result = delete_process(row[columns.id]);
-            if (result.code) {
+            Error error = delete_process(row[columns.id]);
+            if (error.code) {
                 Gtk::MessageDialog error_dialog(
                     *this,
-                    result.error,
+                    error.error,
                     false,
                     Gtk::MESSAGE_ERROR,
                     Gtk::BUTTONS_OK,
