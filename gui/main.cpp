@@ -369,7 +369,7 @@ class RunDialog: public Gtk::Dialog {
 class FprocGUI: public Gtk::Window {
     public:
         FprocGUI() {
-            this->set_title("FprocGUI");
+            this->set_title("Fproc");
             this->set_default_size(640, 204);
 
             hbox.pack_end(vbox, false, true, 0);
