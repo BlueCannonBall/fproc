@@ -414,7 +414,6 @@ class FprocGUI: public Gtk::Window {
             vbox.pack_start(delete_btn, false, false, 0);
             vbox.pack_start(refresh_btn, false, false, 0);
 
-            start_btn.set_sensitive(false);
             stop_btn.set_sensitive(false);
 
             on_refresh_clicked();
@@ -462,8 +461,12 @@ class FprocGUI: public Gtk::Window {
 
         void on_treeview_cursor_changed() {
             auto row = *(treeview.get_selection()->get_selected());
-            start_btn.set_sensitive(!row[columns.running]);
             stop_btn.set_sensitive(row[columns.running]);
+            if (row[columns.running]) {
+                start_btn.set_label("Restart");
+            } else {
+                start_btn.set_label("Start");
+            }
         }
 
         void on_refresh_clicked() {
