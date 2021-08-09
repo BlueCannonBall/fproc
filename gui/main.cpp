@@ -310,6 +310,12 @@ class RunDialog: public Gtk::Dialog {
             command_box.pack_start(command_entry, true, true, 0);
             id_box.pack_start(id_entry, true, true, 0);
             working_dir_box.pack_start(working_dir_entry, false, false, 0);
+            if (home) {
+                working_dir_entry.set_filename(home);
+            } else {
+                cout << "fproc-gui-RunDialog::RunDialog: Error: HOME variable not present in environment\n";
+                exit(EXIT_FAILURE);
+            }
 
             this->add_button("gtk-cancel", false);
             this->add_button("gtk-ok", true);
