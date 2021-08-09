@@ -3,6 +3,7 @@
 [![forthebadge](https://forthebadge.com/images/badges/made-with-c-plus-plus.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/made-with-rust.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/designed-in-inkscape.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/powered-by-black-magic.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/check-it-out.svg)](https://forthebadge.com)
 
 
@@ -12,7 +13,7 @@
 A process manager for Linux written in C++ and Rust.
 
 ## Motivation
-After setting up cpu/memory limits for all the processes running on my server, I was astonished to find that the memory usage was still over 120 mb. After doing some probing, I found that `pm2`, a process manager, was using more CPU/memory than all my services combined!
+After setting up cpu/memory limits for all the processes running on my server, I was astonished to find that the memory usage was still over 120 MB. After doing some probing, I found that `pm2`, a process manager, was using more CPU/memory than all my services combined!
 
 ## Usage (CLI)
 ```
