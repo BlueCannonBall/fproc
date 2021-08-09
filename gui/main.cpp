@@ -12,8 +12,6 @@
 #include <unordered_map>
 #include <array>
 #include <boost/algorithm/string.hpp>
-#include "gtkmm/filechooser.h"
-#include "gtkmm/filechooserbutton.h"
 #include "streampeerbuffer.hpp"
 
 #define MESSAGE_SIZE 65536
@@ -43,6 +41,26 @@ struct Process {
     unsigned int pid;
     bool running;
     unsigned int restarts;
+
+    bool operator==(const Process& p) {
+        return (
+            id == p.id &&
+            name == p.name &&
+            pid == p.pid &&
+            running == p.running &&
+            restarts == p.restarts
+        );
+    }
+
+    bool operator!=(const Process& p) {
+        return !(
+            id == p.id &&
+            name == p.name &&
+            pid == p.pid &&
+            running == p.running &&
+            restarts == p.restarts
+        );
+    }
 };
 
 int open_fproc_sock() {
@@ -76,7 +94,7 @@ int open_fproc_sock() {
     }
 }
 
-Result run_process(const string& name, unsigned int id = 0, bool custom_id = false) {
+Result run_process(const string& name, const string& working_dir, unsigned int id = 0, bool custom_id = false) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Run);
@@ -98,6 +116,7 @@ Result run_process(const string& name, unsigned int id = 0, bool custom_id = fal
         buf.put_string(var.first);
         buf.put_string(var.second);
     }
+    buf.put_string(working_dir);
     write(sock, buf.data_array.data(), buf.size());
     close(sock);
     return Result{};
@@ -295,7 +314,32 @@ class RunDialog: public Gtk::Dialog {
 
         void on_dialog_response(int response_id) {
             if (response_id) {
+                Result result;
+                if (id_entry.get_text().size() == 0) {
+                    result = run_process(
+                        command_entry.get_text(),
+                        working_dir_entry.get_filename()
+                    );
+                } else {
+                    result = run_process(
+                        command_entry.get_text(),
+                        working_dir_entry.get_filename(),
+                        atoi(id_entry.get_text().c_str()),
+                        true
+                    );
+                }
 
+                if (result.code) {
+                    Gtk::MessageDialog error_dialog(
+                        *this,
+                        result.error,
+                        false,
+                        Gtk::MESSAGE_ERROR,
+                        Gtk::BUTTONS_OK,
+                        true
+                    );
+                    error_dialog.run();
+                }
             }
         }
 };
@@ -323,6 +367,7 @@ class FprocGUI: public Gtk::Window {
             treeview.append_column("Restarts", columns.restarts);
             treeview.get_column(4)->set_sort_column(4);
             hbox.pack_start(treeview, true, true, 0);
+            treeview.signal_cursor_changed().connect(sigc::mem_fun(this, &FprocGUI::on_treeview_cursor_changed));
 
             run_btn.set_image_from_icon_name("system-run");
             start_btn.set_image_from_icon_name("media-playback-start");
@@ -330,6 +375,9 @@ class FprocGUI: public Gtk::Window {
             delete_btn.set_image_from_icon_name("user-trash");
             refresh_btn.set_image_from_icon_name("view-refresh");
             run_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_run_clicked));
+            start_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_start_clicked));
+            stop_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_stop_clicked));
+            delete_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_delete_clicked));
             refresh_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_refresh_clicked));
             vbox.pack_start(run_btn, false, false, 0);
             vbox.pack_start(start_btn, false, false, 0);
@@ -339,7 +387,6 @@ class FprocGUI: public Gtk::Window {
 
             start_btn.set_sensitive(false);
             stop_btn.set_sensitive(false);
-            delete_btn.set_sensitive(false);
 
             on_refresh_clicked();
 
@@ -359,6 +406,7 @@ class FprocGUI: public Gtk::Window {
         FprocModelColumns columns;
         Glib::RefPtr<Gtk::ListStore> list_store = Gtk::ListStore::create(columns);
         Gtk::TreeView treeview;
+        vector<Process> processes;
 
         Gtk::Button run_btn{"Run"};
         Gtk::Button start_btn{"Start"};
@@ -366,23 +414,104 @@ class FprocGUI: public Gtk::Window {
         Gtk::Button delete_btn{"Delete"};
         Gtk::Button refresh_btn{"Refresh"};
 
-        void on_refresh_clicked() {
+        inline void repopulate_list_store(vector<Process>& new_processes) {
+            Gtk::TreeModel::Path old_path;
+            Gtk::TreeViewColumn* focus_column;
+            treeview.get_cursor(old_path, focus_column);
             list_store->clear();
-            vector<Process> processes;
-            get_processes(processes);
-            for (const auto& process : processes) {
+            for (const auto& process : new_processes) {
                 auto row = *(list_store->append());
                 row[columns.id] = process.id;
                 row[columns.name] = process.name;
                 row[columns.pid] = process.pid;
                 row[columns.running] = process.running;
                 row[columns.restarts] = process.restarts;
+                treeview.set_cursor(old_path);
+            }
+            processes = new_processes;
+        }
+
+        void on_treeview_cursor_changed() {
+            auto row = *(treeview.get_selection()->get_selected());
+            start_btn.set_sensitive(!row[columns.running]);
+            stop_btn.set_sensitive(row[columns.running]);
+        }
+
+        void on_refresh_clicked() {
+            vector<Process> new_processes;
+            get_processes(new_processes);
+            if (processes.size() != new_processes.size()) {
+                repopulate_list_store(new_processes);
+            } else {
+                for (unsigned i = 0; i<processes.size(); i++) {
+                    if (processes[i] != new_processes[i]) {
+                        repopulate_list_store(new_processes);
+                        break;
+                    }
+                }
             }
         }
 
         void on_run_clicked() {
             RunDialog dialog(*this);
             dialog.run();
+        }
+
+        void on_start_clicked() {
+            auto row = *(treeview.get_selection()->get_selected());
+
+            Result result = start_process(row[columns.id]);
+            if (result.code) {
+                Gtk::MessageDialog error_dialog(
+                    *this,
+                    result.error,
+                    false,
+                    Gtk::MESSAGE_ERROR,
+                    Gtk::BUTTONS_OK,
+                    true
+                );
+                error_dialog.run();
+            } else {
+                on_refresh_clicked();
+            }
+        }
+
+        void on_stop_clicked() {
+            auto row = *(treeview.get_selection()->get_selected());
+
+            Result result = stop_process(row[columns.id]);
+            if (result.code) {
+                Gtk::MessageDialog error_dialog(
+                    *this,
+                    result.error,
+                    false,
+                    Gtk::MESSAGE_ERROR,
+                    Gtk::BUTTONS_OK,
+                    true
+                );
+                error_dialog.run();
+            } else {
+                on_refresh_clicked();
+            }
+        }
+
+        void on_delete_clicked() {
+            auto row = *(treeview.get_selection()->get_selected());
+
+            Result result = delete_process(row[columns.id]);
+            if (result.code) {
+                Gtk::MessageDialog error_dialog(
+                    *this,
+                    result.error,
+                    false,
+                    Gtk::MESSAGE_ERROR,
+                    Gtk::BUTTONS_OK,
+                    true
+                );
+                error_dialog.run();
+            } else {
+                on_refresh_clicked();
+            }
         }
 };
 
