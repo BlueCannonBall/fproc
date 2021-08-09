@@ -289,7 +289,7 @@ class NumberEntry: public Gtk::Entry {
 class RunDialog: public Gtk::Dialog {
     public:
         RunDialog(Gtk::Window& parent) {
-            this->set_title("FprocGUI Run");
+            this->set_title("Fproc Run");
             this->set_transient_for(parent);
             vbox->set_orientation(Gtk::ORIENTATION_VERTICAL);
             vbox->set_spacing(6);
