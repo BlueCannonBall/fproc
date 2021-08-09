@@ -254,7 +254,7 @@ Result start_process(unsigned int id) {
 class FprocModelColumns: public Gtk::TreeModel::ColumnRecord {
     public:
         Gtk::TreeModelColumn<unsigned int> id;
-        Gtk::TreeModelColumn<string> name;
+        Gtk::TreeModelColumn<Glib::ustring> name;
         Gtk::TreeModelColumn<unsigned int> pid;
         Gtk::TreeModelColumn<bool> running;
         Gtk::TreeModelColumn<unsigned int> restarts;
