@@ -37,7 +37,7 @@ SUBCOMMANDS:
 
 ## Building & Installing
 
-When run from the root folder of this repo, the commands below compile and install the `fproc` daemon, CLI, and GUI.
+When run from the root folder of this repo, the commands below compile and install the `fproc` daemon, CLI, and GUI. The daemon, CLI, and GUI can be compiled and installed separately from each other using the makefiles provided in their respective directories.
 ```
 $ make
 # make install
