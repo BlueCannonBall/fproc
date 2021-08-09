@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -Wno-unused-result -s -Ofast -static-libstdc++ -Wl,-Bstatic -lboost_system -Wl,-Bdynamic -lpthread
+CFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -Ofast -static-libstdc++ -Wl,-Bstatic -lboost_system -Wl,-Bdynamic -lpthread
 TARGET = fprocd
 
 $(TARGET): main.cpp streampeerbuffer.cpp streampeerbuffer.hpp
