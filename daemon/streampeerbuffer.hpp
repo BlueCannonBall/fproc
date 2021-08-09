@@ -56,5 +56,6 @@ namespace spb
 
             void reset();
             size_t size();
+            uint8_t* data();
     };
 }

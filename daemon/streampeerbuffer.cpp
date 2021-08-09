@@ -299,4 +299,8 @@ namespace spb {
     size_t StreamPeerBuffer::size() {
         return data_array.size();
     }
+
+    uint8_t* StreamPeerBuffer::data() {
+        return data_array.data();
+    }
 }

@@ -112,7 +112,7 @@ void handle_conn(int socket) {
     for (;;) {
         spb::StreamPeerBuffer buf(true);
         buf.data_array.resize(MESSAGE_SIZE);
-        int valread = read(socket, buf.data_array.data(), buf.data_array.size());
+        int valread = read(socket, buf.data(), buf.data_array.size());
         if (valread == 0) {
             cout << "fprocd-handle_conn: Client disconnected\n";
             return;
@@ -143,7 +143,7 @@ void handle_conn(int socket) {
                 new_proc->working_dir = buf.get_string();
                 buf.reset();
                 buf.put_u8(0);
-                write(socket, buf.data_array.data(), 1);
+                write(socket, buf.data(), 1);
                 launch_process(new_proc);
                 processes[id] = new_proc;
                 new_proc->running = true;
@@ -157,14 +157,14 @@ void handle_conn(int socket) {
                     buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
-                    write(socket, buf.data_array.data(), buf.data_array.size());
+                    write(socket, buf.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
                 }
                 kill_process(processes[id]);
                 buf.reset();
                 buf.put_u8(0);
-                write(socket, buf.data_array.data(), 1);
+                write(socket, buf.data(), 1);
                 processes[id]->running = false;
                 delete processes[id];
                 processes.erase(id);
@@ -178,14 +178,14 @@ void handle_conn(int socket) {
                     buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
-                    write(socket, buf.data_array.data(), buf.data_array.size());
+                    write(socket, buf.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
                 }
                 kill_process(processes[id]);
                 buf.reset();
                 buf.put_u8(0);
-                write(socket, buf.data_array.data(), 1);
+                write(socket, buf.data(), 1);
                 processes[id]->running = false;
                 data_mtx.unlock();
                 break;
@@ -201,7 +201,7 @@ void handle_conn(int socket) {
                     buf.put_u8(process.second->running);
                     buf.put_u32(process.second->restarts);
                 }
-                write(socket, buf.data_array.data(), buf.data_array.size());
+                write(socket, buf.data(), buf.data_array.size());
                 data_mtx.unlock();
                 break;
             }
@@ -212,7 +212,7 @@ void handle_conn(int socket) {
                     buf.reset();
                     buf.put_u8(1);
                     buf.put_string("That process does not exist");
-                    write(socket, buf.data_array.data(), buf.data_array.size());
+                    write(socket, buf.data(), buf.data_array.size());
                     data_mtx.unlock();
                     break;
                 }
@@ -221,7 +221,7 @@ void handle_conn(int socket) {
                 processes[id]->restarts++;
                 buf.reset();
                 buf.put_u8(0);
-                write(socket, buf.data_array.data(), 1);
+                write(socket, buf.data(), 1);
                 processes[id]->running = true;
                 data_mtx.unlock();
                 break;

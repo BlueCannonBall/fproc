@@ -139,7 +139,7 @@ Result run_process(const string& name, const string& working_dir, unsigned int i
         buf.put_string(var.second);
     }
     buf.put_string(working_dir);
-    write(sock, buf.data_array.data(), buf.size());
+    write(sock, buf.data(), buf.size());
     close(sock);
     return Result{};
 }
@@ -149,11 +149,11 @@ Result delete_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Delete);
     buf.put_u32(id);
-    write(sock, buf.data_array.data(), buf.size());
+    write(sock, buf.data(), buf.size());
 
     buf.reset();
     buf.data_array.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data_array.data(), buf.data_array.size());
+    int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-delete_process: Error: Server disconnected\n";
         return Result{1, "Server disconnected"};
@@ -175,11 +175,11 @@ Result stop_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Stop);
     buf.put_u32(id);
-    write(sock, buf.data_array.data(), buf.size());
+    write(sock, buf.data(), buf.size());
 
     buf.reset();
     buf.data_array.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data_array.data(), buf.data_array.size());
+    int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-stop_process: Error: Server disconnected\n";
         return Result{1, "Server disconnected"};
@@ -200,11 +200,11 @@ Result get_processes(vector<Process>& processes) {
     int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Get);
-    write(sock, buf.data_array.data(), buf.size());
+    write(sock, buf.data(), buf.size());
 
     buf.reset();
     buf.data_array.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data_array.data(), buf.data_array.size());
+    int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-get_processes: Error: Server disconnected\n";
         return Result{1, "Server disconnected"};
@@ -230,11 +230,11 @@ Result start_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Start);
     buf.put_u32(id);
-    write(sock, buf.data_array.data(), buf.size());
+    write(sock, buf.data(), buf.size());
 
     buf.reset();
     buf.data_array.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data_array.data(), buf.data_array.size());
+    int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
         cout << "fproc-gui-start_process: Error: Server disconnected\n";
         return Result{1, "Server disconnected"};
