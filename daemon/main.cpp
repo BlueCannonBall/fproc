@@ -176,7 +176,7 @@ void handle_conn(int socket) {
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
                     buf.reset();
-                    buf.put_u8(1;
+                    buf.put_u8(1);
                     buf.put_string("That process does not exist");
                     write(socket, buf.data_array.data(), buf.data_array.size());
                     data_mtx.unlock();
