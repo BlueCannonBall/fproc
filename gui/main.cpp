@@ -394,15 +394,12 @@ class FprocGUI: public Gtk::Window {
             stop_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_stop_clicked));
             delete_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_delete_clicked));
             refresh_btn.signal_clicked().connect(sigc::mem_fun(this, &FprocGUI::on_refresh_clicked));
+            stop_btn.set_sensitive(false);
             vbox.pack_start(run_btn, false, false, 0);
             vbox.pack_start(start_btn, false, false, 0);
             vbox.pack_start(stop_btn, false, false, 0);
             vbox.pack_start(delete_btn, false, false, 0);
             vbox.pack_start(refresh_btn, false, false, 0);
-
-            stop_btn.set_sensitive(false);
-
-            on_refresh_clicked();
 
             this->add(hbox);
             g_timeout_add_seconds(1, [](gpointer data) -> gboolean {
@@ -505,8 +502,6 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
-            } else {
-                on_refresh_clicked();
             }
         }
 
@@ -524,8 +519,6 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
-            } else {
-                on_refresh_clicked();
             }
         }
 
@@ -543,10 +536,7 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
-            } else {
-                on_refresh_clicked();
             }
-        }
 };
 
 int main(int argc, char** argv) {
