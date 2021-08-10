@@ -445,7 +445,7 @@ class FprocGUI: public Gtk::Window {
         Gtk::Button delete_btn{"Delete"};
         Gtk::Button refresh_btn{"Refresh"};
 
-        inline void repopulate_list_store(vector<Process>& new_processes) {
+        void repopulate_list_store(vector<Process>& new_processes) {
             Gtk::TreeModel::Path old_path;
             Gtk::TreeViewColumn* focus_column;
             treeview.get_cursor(old_path, focus_column);
@@ -462,9 +462,7 @@ class FprocGUI: public Gtk::Window {
                 treeview.set_cursor(old_path);
             }
             processes = new_processes;
-            scrolled_window.get_hadjustment()->set_value(old_hscroll_pos);
-            scrolled_window.get_vadjustment()->set_value(old_vscroll_pos);
-            g_timeout_add(2, [](gpointer data) -> gboolean {
+            g_timeout_add(0, [](gpointer data) -> gboolean {
                 FprocGUI* fproc = ((FprocGUI*) data);
                 fproc->scrolled_window.get_hadjustment()->set_value(fproc->old_hscroll_pos);
                 fproc->scrolled_window.get_vadjustment()->set_value(fproc->old_vscroll_pos);
