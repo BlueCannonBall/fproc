@@ -134,7 +134,23 @@ Error run_process(const string& name, const string& working_dir, unsigned int id
     }
     buf.put_string(working_dir);
     write(sock, buf.data(), buf.size());
-    return Error{};
+    
+    buf.reset();
+    buf.data_array.resize(MESSAGE_SIZE);
+    int valread = read(sock, buf.data(), buf.data_array.size());
+    if (valread == 0) {
+        cout << "fproc-gui-run_process: Error: Server disconnected before responding\n";
+        return Error{1, "Server disconnected before responding"};
+    }
+    buf.data_array.resize(valread);
+
+    uint8_t code = buf.get_u8();
+    string error;
+    if (code) {
+        error = buf.get_string();
+        cout << "fproc-gui-run_process: Error: " << error << endl;
+    }
+    return Error{code, error};
 }
 
 Error delete_process(unsigned int id) {
@@ -147,8 +163,8 @@ Error delete_process(unsigned int id) {
     buf.data_array.resize(MESSAGE_SIZE);
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
-        cout << "fproc-gui-delete_process: Error: Server disconnected\n";
-        return Error{1, "Server disconnected"};
+        cout << "fproc-gui-delete_process: Error: Server disconnected before responding\n";
+        return Error{1, "Server disconnected before responding"};
     }
     buf.data_array.resize(valread);
 
@@ -171,8 +187,8 @@ Error stop_process(unsigned int id) {
     buf.data_array.resize(MESSAGE_SIZE);
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
-        cout << "fproc-gui-stop_process: Error: Server disconnected\n";
-        return Error{1, "Server disconnected"};
+        cout << "fproc-gui-stop_process: Error: Server disconnected before responding\n";
+        return Error{1, "Server disconnected before responding"};
     }
     buf.data_array.resize(valread);
 
@@ -194,8 +210,8 @@ Error get_processes(vector<Process>& processes) {
     buf.data_array.resize(MESSAGE_SIZE);
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
-        cout << "fproc-gui-get_processes: Error: Server disconnected\n";
-        return Error{1, "Server disconnected"};
+        cout << "fproc-gui-get_processes: Error: Server disconnected before responding\n";
+        return Error{1, "Server disconnected before responding"};
     }
     buf.data_array.resize(valread);
 
@@ -222,8 +238,8 @@ Error start_process(unsigned int id) {
     buf.data_array.resize(MESSAGE_SIZE);
     int valread = read(sock, buf.data(), buf.data_array.size());
     if (valread == 0) {
-        cout << "fproc-gui-start_process: Error: Server disconnected\n";
-        return Error{1, "Server disconnected"};
+        cout << "fproc-gui-start_process: Error: Server disconnected before responding\n";
+        return Error{1, "Server disconnected before responding"};
     }
     buf.data_array.resize(valread);
 
