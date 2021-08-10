@@ -395,7 +395,8 @@ class FprocGUI: public Gtk::Window {
             treeview.get_column(3)->set_sort_column(3);
             treeview.append_column("Restarts", columns.restarts);
             treeview.get_column(4)->set_sort_column(4);
-            hbox.pack_start(treeview, true, true, 0);
+            hbox.pack_start(scrolled_window, true, true, 0);
+            scrolled_window.add(treeview);
             treeview.signal_cursor_changed().connect(sigc::mem_fun(this, &FprocGUI::on_treeview_cursor_changed));
 
             run_btn.set_image_from_icon_name("system-run");
@@ -420,7 +421,8 @@ class FprocGUI: public Gtk::Window {
 
             this->add(hbox);
             g_timeout_add_seconds(1, [](gpointer data) -> gboolean {
-                ((FprocGUI*) data)->on_refresh_clicked();
+                FprocGUI* fproc = ((FprocGUI*) data);
+                fproc->on_refresh_clicked();
                 return TRUE;
             }, this);
             this->show_all();
@@ -434,6 +436,9 @@ class FprocGUI: public Gtk::Window {
         FprocModelColumns columns;
         Glib::RefPtr<Gtk::ListStore> list_store = Gtk::ListStore::create(columns);
         Gtk::TreeView treeview;
+        Gtk::ScrolledWindow scrolled_window;
+        double old_hscroll_pos;
+        double old_vscroll_pos;
         vector<Process> processes;
 
         Gtk::Button run_btn{"Run"};
@@ -446,6 +451,8 @@ class FprocGUI: public Gtk::Window {
             Gtk::TreeModel::Path old_path;
             Gtk::TreeViewColumn* focus_column;
             treeview.get_cursor(old_path, focus_column);
+            old_hscroll_pos = scrolled_window.get_hadjustment()->get_value();
+            old_vscroll_pos = scrolled_window.get_vadjustment()->get_value();
             list_store->clear();
             for (const auto& process : new_processes) {
                 auto row = *(list_store->append());
@@ -457,6 +464,14 @@ class FprocGUI: public Gtk::Window {
                 treeview.set_cursor(old_path);
             }
             processes = new_processes;
+            scrolled_window.get_hadjustment()->set_value(old_hscroll_pos);
+            scrolled_window.get_vadjustment()->set_value(old_vscroll_pos);
+            g_timeout_add(2, [](gpointer data) -> gboolean {
+                FprocGUI* fproc = ((FprocGUI*) data);
+                fproc->scrolled_window.get_hadjustment()->set_value(fproc->old_hscroll_pos);
+                fproc->scrolled_window.get_vadjustment()->set_value(fproc->old_vscroll_pos);
+                return FALSE;
+            }, this);
         }
 
         void on_treeview_cursor_changed() {
@@ -577,9 +592,8 @@ int main(int argc, char** argv) {
                 string comm((std::istreambuf_iterator<char>(comm_file)),
                     std::istreambuf_iterator<char>());
 
-                if (comm == "fprocd") {
+                if (comm == "fprocd\n") {
                     found_process = true;
-                    continue;
                 }
             }
         } else {
@@ -600,6 +614,5 @@ int main(int argc, char** argv) {
 
     auto app = Gtk::Application::create(argc, argv, "org.fproc.gui");
     FprocGUI fproc;
-
     return app->run(fproc);
 }
