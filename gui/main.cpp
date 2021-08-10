@@ -417,6 +417,8 @@ class FprocGUI: public Gtk::Window {
             vbox.pack_start(delete_btn, false, false, 0);
             vbox.pack_start(refresh_btn, false, false, 0);
 
+            on_refresh_clicked();
+
             this->add(hbox);
             g_timeout_add_seconds(1, [](gpointer data) -> gboolean {
                 FprocGUI* fproc = ((FprocGUI*) data);
@@ -462,7 +464,7 @@ class FprocGUI: public Gtk::Window {
                 treeview.set_cursor(old_path);
             }
             processes = new_processes;
-            g_timeout_add(0, [](gpointer data) -> gboolean {
+            g_timeout_add(1, [](gpointer data) -> gboolean {
                 FprocGUI* fproc = ((FprocGUI*) data);
                 fproc->scrolled_window.get_hadjustment()->set_value(fproc->old_hscroll_pos);
                 fproc->scrolled_window.get_vadjustment()->set_value(fproc->old_vscroll_pos);
