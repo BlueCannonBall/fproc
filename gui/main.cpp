@@ -134,7 +134,6 @@ Error run_process(const string& name, const string& working_dir, unsigned int id
     }
     buf.put_string(working_dir);
     write(sock, buf.data(), buf.size());
-    close(sock);
     return Error{};
 }
 
@@ -152,7 +151,6 @@ Error delete_process(unsigned int id) {
         return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
-    close(sock);
 
     uint8_t code = buf.get_u8();
     string error;
@@ -177,7 +175,6 @@ Error stop_process(unsigned int id) {
         return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
-    close(sock);
 
     uint8_t code = buf.get_u8();
     string error;
@@ -201,7 +198,6 @@ Error get_processes(vector<Process>& processes) {
         return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
-    close(sock);
 
     unsigned int len = buf.get_u32();
     for (unsigned int i = 0; i<len; i++) {
@@ -230,7 +226,6 @@ Error start_process(unsigned int id) {
         return Error{1, "Server disconnected"};
     }
     buf.data_array.resize(valread);
-    close(sock);
 
     uint8_t code = buf.get_u8();
     string error;
@@ -592,17 +587,21 @@ int main(int argc, char** argv) {
     }
 
     if (!found_process) {
-        cout << "fproc-gui: Started daemon\n";
         bp::child(
             "fprocd",
             bp::std_out > bp::null,
             bp::std_in < bp::null,
             bp::std_err > bp::null
         ).detach();
+        cout << "fproc-gui: Started daemon\n";
         this_thread::sleep_for(chrono::milliseconds(500));
     }
 
     sock = open_fproc_sock();
+    atexit([]() {
+        cout << "fproc-gui: Closing socket\n";
+        close(sock);
+    });
     auto app = Gtk::Application::create(argc, argv, "org.fproc.gui");
     FprocGUI fproc;
     return app->run(fproc);
