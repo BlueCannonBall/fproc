@@ -341,40 +341,13 @@ class RunDialog: public Gtk::Dialog {
         NumberEntry id_entry;
         Gtk::FileChooserButton working_dir_entry;
 
-        void on_dialog_response(int response_id) {
-            if (response_id) {
-                Error error;
-                if (id_entry.get_text().size() == 0) {
-                    error = run_process(
-                        command_entry.get_text(),
-                        working_dir_entry.get_filename()
-                    );
-                } else {
-                    error = run_process(
-                        command_entry.get_text(),
-                        working_dir_entry.get_filename(),
-                        atoi(id_entry.get_text().c_str()),
-                        true
-                    );
-                }
-
-                if (error.code) {
-                    Gtk::MessageDialog error_dialog(
-                        *this,
-                        error.error,
-                        false,
-                        Gtk::MESSAGE_ERROR,
-                        Gtk::BUTTONS_OK,
-                        true
-                    );
-                    error_dialog.run();
-                }
-            }
-        }
+        void on_dialog_response(int response_id);
 };
 
 class FprocGUI: public Gtk::Window {
     public:
+        friend class RunDialog;
+
         FprocGUI() {
             this->set_title("Fproc");
             this->set_default_size(640, 480);
@@ -518,6 +491,8 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
+            } else {
+                on_refresh_clicked();
             }
         }
 
@@ -535,6 +510,8 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
+            } else {
+                on_refresh_clicked();
             }
         }
 
@@ -552,9 +529,44 @@ class FprocGUI: public Gtk::Window {
                     true
                 );
                 error_dialog.run();
+            } else {
+                on_refresh_clicked();
             }
         }
 };
+
+void RunDialog::on_dialog_response(int response_id) {
+    if (response_id) {
+        Error error;
+        if (id_entry.get_text().size() == 0) {
+            error = run_process(
+                command_entry.get_text(),
+                working_dir_entry.get_filename()
+            );
+        } else {
+            error = run_process(
+                command_entry.get_text(),
+                working_dir_entry.get_filename(),
+                atoi(id_entry.get_text().c_str()),
+                true
+            );
+        }
+
+        if (error.code) {
+            Gtk::MessageDialog error_dialog(
+                *this,
+                error.error,
+                false,
+                Gtk::MESSAGE_ERROR,
+                Gtk::BUTTONS_OK,
+                true
+            );
+            error_dialog.run();
+        } else {
+            ((FprocGUI*) get_transient_for())->on_refresh_clicked();
+        }
+    }
+}
 
 int main(int argc, char** argv) {
     ::argc = argc;
