@@ -29,6 +29,7 @@ namespace bp = boost::process;
 int argc;
 char** argv;
 const char* home = getenv("HOME");
+int sock;
 
 enum class Packet {
     Run = 0,
@@ -61,13 +62,7 @@ struct Process {
     }
 
     bool operator!=(const Process& p) {
-        return !(
-            id == p.id &&
-            name == p.name &&
-            pid == p.pid &&
-            running == p.running &&
-            restarts == p.restarts
-        );
+        return !(*this == p);
     }
 };
 
@@ -117,7 +112,6 @@ int open_fproc_sock() {
 }
 
 Error run_process(const string& name, const string& working_dir, unsigned int id = 0, bool custom_id = false) {
-    int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Run);
     buf.put_string(name);
@@ -145,7 +139,6 @@ Error run_process(const string& name, const string& working_dir, unsigned int id
 }
 
 Error delete_process(unsigned int id) {
-    int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Delete);
     buf.put_u32(id);
@@ -171,7 +164,6 @@ Error delete_process(unsigned int id) {
 }
 
 Error stop_process(unsigned int id) {
-    int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Stop);
     buf.put_u32(id);
@@ -197,7 +189,6 @@ Error stop_process(unsigned int id) {
 }
 
 Error get_processes(vector<Process>& processes) {
-    int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Get);
     write(sock, buf.data(), buf.size());
@@ -226,7 +217,6 @@ Error get_processes(vector<Process>& processes) {
 }
 
 Error start_process(unsigned int id) {
-    int sock = open_fproc_sock();
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Start);
     buf.put_u32(id);
@@ -612,6 +602,7 @@ int main(int argc, char** argv) {
         this_thread::sleep_for(chrono::milliseconds(500));
     }
 
+    sock = open_fproc_sock();
     auto app = Gtk::Application::create(argc, argv, "org.fproc.gui");
     FprocGUI fproc;
     return app->run(fproc);
