@@ -537,6 +537,7 @@ class FprocGUI: public Gtk::Window {
                 );
                 error_dialog.run();
             }
+        }
 };
 
 int main(int argc, char** argv) {
