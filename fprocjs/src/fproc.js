@@ -53,6 +53,7 @@ class Fproc {
         this.STATES = {
             OPEN: 0,
             OPENING: 1,
+            CLOSED: 2,
         };
         this.state = this.STATES.OPENING;
         this.fproc = net.createConnection({ path: os.userInfo().homedir + "/.fproc.sock" }, () => {
@@ -148,6 +149,7 @@ class Fproc {
      * @readonly
      */
     closeFproc() {
+        this.state = this.STATES.CLOSED;
         this.fproc.destroy();
     }
 
