@@ -148,7 +148,7 @@ class Fproc {
      * @returns {void}
      * @readonly
      */
-    closeFproc() {
+    finish() {
         this.state = this.STATES.CLOSED;
         this.fproc.destroy();
     }

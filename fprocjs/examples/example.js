@@ -18,6 +18,6 @@ const fproc = new FPROC(async () => {
     // Delete the first process
     console.log(await fproc.delete(0));
 
-    // Close the connection to fproc (If you don't do this Node will run until you do)
-    fproc.closeFproc();
+    // Closes the session with fproc (If you don't do this Node will run until you do)
+    fproc.finish();
 });
