@@ -16,17 +16,20 @@ const FPROC = require("fprocjs");
 const fproc = new FPROC(async () => {
     // Run when ready
 
-    // Get the list of process
-    await fproc.list();
+    // Run the test file with an ID of 0 (first process)
+    console.log(await fproc.run("node examples/run.js", 0));
+
+    // Get all running processes
+    console.log(await fproc.list());
 
     // Stop the first process
-    await fproc.stop(0);
+    console.log(await fproc.stop(0));
 
     // Restart the first process
-    await fproc.restart(0);
+    console.log(await fproc.restart(0));
 
     // Delete the first process
-    await fproc.delete(0);
+    console.log(await fproc.delete(0));
 
     // Close the connection to fproc (If you don't do this Node will run until you do)
     fproc.closeFproc();

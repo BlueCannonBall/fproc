@@ -60,14 +60,52 @@ class Fproc {
             callback();
         });
 
-        this._asyncRequest = function () {};
-        this._ondone = function () {};
         this.fproc.on("data", (data) => {
             this._ondone(this._asyncRequest(data.buffer));
         });
         this.fproc.on("error", (err) => {
             throw new FprocError("Fproc encountered an error: " + err.message);
         });
+    }
+
+    /**
+     * Runs a command with the fproc daemon
+     * @param {string} command Command to be run
+     * @param {number} customID A custom ID for the command (If left alone, it will automatically set the ID to one that isn't in use)
+     * @param {string} directory The target directory for the command to be ran in (Default is this module's directory)
+     * @param {Object} env The environment variables to be passed down to the process
+     * @returns {Promise<boolean>} Failed or not
+     */
+    async run(command, customID = undefined, directory = __dirname, env = process.env) {
+        if (typeof command !== "string" || command.length <= 0) {
+            throw new FprocError("The command argument must be a string with a content length of at least 1");
+        }
+        if ((typeof customID !== "undefined" && typeof customID !== "number") || customID < 0) {
+            throw new FprocError("The custom ID must be either undefined (meaning unset/auto) or a valid number with a value of at least 0");
+        }
+        if (typeof directory !== "string") {
+            throw new FprocError("The custom directory must be a string");
+        }
+        if (typeof env !== "object") {
+            throw new FprocError("The env must be an object");
+        }
+
+        this.checkErrors();
+        const writer = new HSPB.HolySteamPeerBufferWriter(JSON.stringify(env).length + 100);
+        writer.u8 = headers.Run;
+        writer.string = command;
+        writer.u8 = Number(customID !== undefined);
+        if (customID !== undefined) {
+            writer.u32 = customID;
+        }
+        writer.u32 = Object.keys(env).length;
+        for (const key in env) {
+            writer.string = key;
+            writer.string = env[key].toString();
+        }
+        writer.string = directory;
+        this.fproc.write(writer.buffer);
+        return await this._awaitAsyncRequest(this._errorCheckResponse);
     }
 
     /**
@@ -102,6 +140,15 @@ class Fproc {
 
     async restart(id) {
         return await this._idSendRequest(id, headers.Start);
+    }
+
+    /**
+     * Closes the Fproc socket
+     * @returns {void}
+     * @readonly
+     */
+    closeFproc() {
+        this.fproc.destroy();
     }
 
     /**
@@ -141,15 +188,6 @@ class Fproc {
         writer.u32 = id;
         this.fproc.write(writer.buffer);
         return await this._awaitAsyncRequest(this._errorCheckResponse);
-    }
-
-    /**
-     * Closes the Fproc socket
-     * @returns {void}
-     * @readonly
-     */
-    closeFproc() {
-        this.fproc.destroy();
     }
 
     /**

@@ -33,8 +33,8 @@ class HolySteamPeerBufferReader {
 }
 
 class HolySteamPeerBufferWriter {
-    constructor() {
-        this.view = new DataView(new ArrayBuffer(1024));
+    constructor(size = 1024) {
+        this.view = new DataView(new ArrayBuffer(size));
         this.offset = 0;
     }
 
@@ -43,15 +43,20 @@ class HolySteamPeerBufferWriter {
         this.offset += 1;
     }
 
+    set u16(value) {
+        this.view.setUint16(this.offset, value);
+        this.offset += 2;
+    }
+
     set u32(value) {
         this.view.setUint32(this.offset, value);
-        this.offset += 1;
+        this.offset += 4;
     }
 
     set string(string) {
-        this.view.setUint16(string.length);
+        this.u16 = string.length;
         for (const char of string) {
-            this.view.setUint8(char.charCodeAt());
+            this.u8 = char.charCodeAt();
         }
     }
 
