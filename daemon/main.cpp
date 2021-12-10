@@ -1,34 +1,36 @@
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <unordered_map>
-#include <map>
-#include <string>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <string.h>
+#include "streampeerbuffer.hpp"
 #include <boost/process.hpp>
-#include <signal.h>
 #include <chrono>
 #include <iomanip>
+#include <iostream>
+#include <map>
 #include <memory>
-#include "streampeerbuffer.hpp"
+#include <mutex>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <sys/socket.h>
+#include <thread>
+#include <unistd.h>
+#include <unordered_map>
 
-#define MESSAGE_SIZE 65536
-#define BACKLOG 128
+#define MESSAGE_SIZE       65536
+#define BACKLOG            128
+#define INV_PACKET_MESSAGE "Invalid packet"
+#define NO_PROC_MESSAGE    "That process does not exist"
 
 using namespace std;
 namespace bp = boost::process;
 typedef unordered_map<string, string> Env;
 
-template<class T1, class T2>
-inline bool in_map(T1& map, const T2& object) {
+template <class T1, class T2>
+inline bool in_map(const T1& map, const T2& object) {
     return map.find(object) != map.end();
 }
 
-template<class T1, class T2>
-inline bool in_vec(T1& vec, const T2& object) {
+template <class T1, class T2>
+inline bool in_vec(const T1& vec, const T2& object) {
     return find(vec.begin(), vec.end(), object) != vec.end();
 }
 
@@ -71,11 +73,7 @@ void launch_process(Process* proc) {
     }
     vector<string> actual_command = {"/bin/sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
-    proc->child = std::move(make_unique<bp::child>("/usr/bin/env", command,
-        bp::std_out > bp::null,
-        bp::std_in < bp::null,
-        bp::std_err > bp::null
-    ));
+    proc->child = std::move(make_unique<bp::child>("/usr/bin/env", command, bp::std_out > bp::null, bp::std_in<bp::null, bp::std_err> bp::null));
     cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
 }
 
@@ -91,9 +89,8 @@ std::vector<std::string> string_split(const std::string& str) {
     return result;
 }
 
-void signal_handler(int signum, siginfo_t *siginfo, void *context) {
-    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " <<
-        (long) siginfo->si_pid << endl;
+void signal_handler(int signum, siginfo_t* siginfo, void* context) {
+    cout << "fprocd-signal_handler: Signal (" << signum << ") received from process " << (long) siginfo->si_pid << endl;
     if (signum != SIGPIPE) {
         unlink(socket_path.c_str());
         data_mtx.lock();
@@ -101,29 +98,43 @@ void signal_handler(int signum, siginfo_t *siginfo, void *context) {
             unsigned int pid = process.second->child->id();
             kill_process(process.second);
             cout << "fprocd-signal_handler: Killed process "
-                << pid << endl;
+                 << pid << endl;
         }
         data_mtx.unlock();
         exit(signum);
     }
 }
 
+void handle_error(spb::StreamPeerBuffer& buf, int socket, const std::string& error) {
+    buf.put_u8(1);
+    buf.put_string(error);
+    cout << "fprocd-handle_error: Sending error \"" << error << "\" to client\n";
+    write(socket, buf.data(), buf.size());
+}
+
 void handle_conn(int socket) {
     for (;;) {
+    listen:;
         spb::StreamPeerBuffer buf(true);
-        buf.data_array.resize(MESSAGE_SIZE);
-        int valread = read(socket, buf.data(), buf.data_array.size());
+        buf.resize(MESSAGE_SIZE);
+        int valread = read(socket, buf.data(), buf.size());
         if (valread == 0) {
             cout << "fprocd-handle_conn: Client disconnected\n";
             return;
         }
-        buf.data_array.resize(valread);
+        buf.resize(valread);
         unsigned char pckt_id = buf.get_u8();
         switch (pckt_id) {
             case (int) Packet::Run: {
                 data_mtx.lock();
-                Process *new_proc = new Process;
-                new_proc->command = buf.get_string();
+                Process* new_proc = new Process;
+                if (buf.get_string(new_proc->command)) {
+                    buf.reset();
+                    handle_error(buf, socket, INV_PACKET_MESSAGE);
+                    data_mtx.unlock();
+                    delete new_proc;
+                    break;
+                }
                 unsigned int id;
                 if (buf.get_u8() == 1) {
                     id = buf.get_u32();
@@ -135,18 +146,40 @@ void handle_conn(int socket) {
                     id = alloc_id();
                 }
                 unsigned int env_size = buf.get_u32();
-                for (unsigned i = 0; i<env_size; i++) {
-                    string key = buf.get_string();
-                    string value = buf.get_string();
+
+                for (unsigned i = 0; i < env_size; i++) {
+                    string key;
+                    if (buf.get_string(key)) {
+                        buf.reset();
+                        handle_error(buf, socket, INV_PACKET_MESSAGE);
+                        data_mtx.unlock();
+                        delete new_proc;
+                        goto listen;
+                    }
+                    string value;
+                    if (buf.get_string(value)) {
+                        buf.reset();
+                        handle_error(buf, socket, INV_PACKET_MESSAGE);
+                        data_mtx.unlock();
+                        delete new_proc;
+                        goto listen;
+                    }
                     new_proc->env[key] = value;
                 }
-                new_proc->working_dir = buf.get_string();
-                buf.reset();
-                buf.put_u8(0);
-                write(socket, buf.data(), 1);
+                if (buf.get_string(new_proc->working_dir)) {
+                    buf.reset();
+                    handle_error(buf, socket, INV_PACKET_MESSAGE);
+                    data_mtx.unlock();
+                    delete new_proc;
+                    break;
+                }
+
                 launch_process(new_proc);
                 processes[id] = new_proc;
                 new_proc->running = true;
+                buf.reset();
+                buf.put_u8(0);
+                write(socket, buf.data(), 1);
                 data_mtx.unlock();
                 break;
             }
@@ -155,19 +188,17 @@ void handle_conn(int socket) {
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
                     buf.reset();
-                    buf.put_u8(1);
-                    buf.put_string("That process does not exist");
-                    write(socket, buf.data(), buf.data_array.size());
+                    handle_error(buf, socket, NO_PROC_MESSAGE);
                     data_mtx.unlock();
                     break;
                 }
                 kill_process(processes[id]);
-                buf.reset();
-                buf.put_u8(0);
-                write(socket, buf.data(), 1);
                 processes[id]->running = false;
                 delete processes[id];
                 processes.erase(id);
+                buf.reset();
+                buf.put_u8(0);
+                write(socket, buf.data(), 1);
                 data_mtx.unlock();
                 break;
             }
@@ -176,17 +207,15 @@ void handle_conn(int socket) {
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
                     buf.reset();
-                    buf.put_u8(1);
-                    buf.put_string("That process does not exist");
-                    write(socket, buf.data(), buf.data_array.size());
+                    handle_error(buf, socket, NO_PROC_MESSAGE);
                     data_mtx.unlock();
                     break;
                 }
                 kill_process(processes[id]);
+                processes[id]->running = false;
                 buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data(), 1);
-                processes[id]->running = false;
                 data_mtx.unlock();
                 break;
             }
@@ -201,7 +230,7 @@ void handle_conn(int socket) {
                     buf.put_u8(process.second->running);
                     buf.put_u32(process.second->restarts);
                 }
-                write(socket, buf.data(), buf.data_array.size());
+                write(socket, buf.data(), buf.size());
                 data_mtx.unlock();
                 break;
             }
@@ -210,19 +239,17 @@ void handle_conn(int socket) {
                 data_mtx.lock();
                 if (!in_map(processes, id)) {
                     buf.reset();
-                    buf.put_u8(1);
-                    buf.put_string("That process does not exist");
-                    write(socket, buf.data(), buf.data_array.size());
+                    handle_error(buf, socket, NO_PROC_MESSAGE);
                     data_mtx.unlock();
                     break;
                 }
                 kill_process(processes[id]);
                 launch_process(processes[id]);
                 processes[id]->restarts++;
+                processes[id]->running = true;
                 buf.reset();
                 buf.put_u8(0);
                 write(socket, buf.data(), 1);
-                processes[id]->running = true;
                 data_mtx.unlock();
                 break;
             }
@@ -246,7 +273,7 @@ void maintain_procs() {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     cout << "fprocd: For help, run `fproc help`\n";
 
     struct sigaction act;
@@ -271,7 +298,7 @@ int main(int argc, char **argv) {
     int server_fd, new_socket, len;
     struct sockaddr_un address;
     memset(&address, 0, sizeof(address));
-       
+
     if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket(2)");
         exit(EXIT_FAILURE);
@@ -279,10 +306,9 @@ int main(int argc, char **argv) {
 
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path) - 1);
-    
+
     len = sizeof(address);
-    if (::bind(server_fd, (struct sockaddr*) &address, 
-                                 sizeof(address))) {
+    if (::bind(server_fd, (struct sockaddr*) &address, sizeof(address))) {
         perror("bind(2)");
         exit(EXIT_FAILURE);
     }
@@ -294,8 +320,7 @@ int main(int argc, char **argv) {
     cout << "fprocd: Listening on file " << socket_path << endl;
     thread(maintain_procs).detach();
     for (;;) {
-        if ((new_socket = accept(server_fd, (struct sockaddr*) &address, 
-                           (socklen_t*) &len)) == -1) {
+        if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &len)) == -1) {
             perror("accept(2)");
             exit(EXIT_FAILURE);
         }
