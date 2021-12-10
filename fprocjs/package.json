@@ -1,0 +1,31 @@
+{
+    "name": "fprocjs",
+    "version": "1.2.0",
+    "description": "A JS framework for the fastest process manager written in C++ and Rust, Fproc.",
+    "main": "src/fproc.js",
+    "scripts": {},
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/BlueCannonBall/fproc.git"
+    },
+    "bugs": {
+        "url": "https://github.com/BlueCannonBall/fproc/issues"
+    },
+    "homepage": "https://github.com/BlueCannonBall/fproc/tree/main/fprocjs",
+    "keywords": [
+        "process",
+        "manager",
+        "process manager",
+        "fproc",
+        "fprocjs",
+        "daemon",
+        "framework",
+        "keep",
+        "stay",
+        "alive",
+        "keep alive",
+        "stay alive"
+    ],
+    "author": "BlueCannonBall, UE2020, Sopur",
+    "license": "GNU"
+}
