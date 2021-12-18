@@ -1,4 +1,5 @@
-#pragma once
+#ifndef STREAMPEERBUFFER_HPP
+#define STREAMPEERBUFFER_HPP
 
 #include <array>
 #include <string.h>
@@ -84,3 +85,5 @@ namespace spb {
         void resize(size_t);
     };
 } // namespace spb
+
+#endif
