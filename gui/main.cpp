@@ -100,7 +100,7 @@ int open_fproc_sock() {
     address.sun_family = AF_UNIX;
     strcpy(address.sun_path, socket_path.c_str());
 
-    if (connect(sock, (struct sockaddr*) &address, sizeof(struct sockaddr_un)) == -1) {
+    if (connect(sock, (struct sockaddr*) &address, sizeof(struct sockaddr_un)) != -1) {
         return sock;
     } else {
         perror("connect(2)");
