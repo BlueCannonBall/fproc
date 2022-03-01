@@ -90,23 +90,21 @@ int open_fproc_sock() {
         exit(EXIT_FAILURE);
     }
 
-    int sock = 0;
-    struct sockaddr_un address;
-
+    int sock;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket(2)");
         exit(EXIT_FAILURE);
     }
 
+    struct sockaddr_un address;
     address.sun_family = AF_UNIX;
     strcpy(address.sun_path, socket_path.c_str());
 
-    if (connect(sock, (struct sockaddr*) &address, sizeof(struct sockaddr_un)) == 0) {
+    if (connect(sock, (struct sockaddr*) &address, sizeof(struct sockaddr_un)) == -1) {
         return sock;
     } else {
         perror("connect(2)");
         exit(EXIT_FAILURE);
-        return -1;
     }
 }
 

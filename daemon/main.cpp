@@ -295,37 +295,42 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    int server_fd, new_socket, len;
-    struct sockaddr_un address;
-    memset(&address, 0, sizeof(address));
-
+    int server_fd;
     if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket(2)");
         exit(EXIT_FAILURE);
     }
 
+    struct sockaddr_un address;
+    int address_len = sizeof(address);
+    memset(&address, 0, sizeof(address));
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path) - 1);
 
-    len = sizeof(address);
-    if (::bind(server_fd, (struct sockaddr*) &address, sizeof(address))) {
+    if (::bind(server_fd, (struct sockaddr*) &address, sizeof(address)) == -1) {
         perror("bind(2)");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, BACKLOG) < 0) {
+    if (listen(server_fd, BACKLOG) == -1) {
         perror("listen(2)");
         exit(EXIT_FAILURE);
     }
 
     cout << "fprocd: Listening on file " << socket_path << endl;
     thread(maintain_procs).detach();
+
     for (;;) {
-        if ((new_socket = accept(server_fd, (struct sockaddr*) &address, (socklen_t*) &len)) == -1) {
+        int new_socket;
+        struct sockaddr_un client_address;
+        int client_address_len = sizeof(address);
+        if ((new_socket = accept(server_fd, (struct sockaddr*) &client_address, (socklen_t*) &client_address_len)) == -1) {
             perror("accept(2)");
             exit(EXIT_FAILURE);
         }
+
         cout << "fprocd: Recieved new connection\n";
         thread(handle_conn, new_socket).detach();
     }
+
     return 0;
 }
