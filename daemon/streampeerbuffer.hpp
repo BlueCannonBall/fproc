@@ -1,8 +1,9 @@
-#ifndef STREAMPEERBUFFER_HPP
-#define STREAMPEERBUFFER_HPP
+#ifndef _STREAMPEERBUFFER_HPP
+#define _STREAMPEERBUFFER_HPP
 
 #include <array>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -32,15 +33,16 @@ namespace spb {
 
     template <typename T>
     T bswap(T val) {
-        T retVal;
-        int8_t* pVal = (int8_t*) &val;
-        int8_t* pRetVal = (int8_t*) &retVal;
+        T ret;
+        auto pointer_val = (int8_t*) &val;
+        auto pointer_ret = (int8_t*) &ret;
         size_t size = sizeof(T);
+
         for (size_t i = 0; i < size; i++) {
-            pRetVal[size - 1 - i] = pVal[i];
+            pointer_ret[size - 1 - i] = pointer_val[i];
         }
 
-        return retVal;
+        return ret;
     }
 
     class StreamPeerBuffer {

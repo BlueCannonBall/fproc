@@ -5,15 +5,15 @@
 #include <vector>
 
 #if __has_include(<endian.h>)
-#include <endian.h>
+    #include <endian.h>
 #endif
 
 namespace spb {
     StreamPeerBuffer::StreamPeerBuffer(bool big_endian) {
 #if __has_include(<endian.h>)
-#if __BYTE_ORDER == __BIG_ENDIAN
+    #if __BYTE_ORDER == __BIG_ENDIAN
         big_endian = !big_endian;
-#endif
+    #endif
 #endif
         this->big_endian = big_endian;
     }

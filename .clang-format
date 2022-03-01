@@ -17,23 +17,6 @@ AllowShortLoopsOnASingleLine: true
 AlwaysBreakBeforeMultilineStrings: false
 BinPackArguments: false
 BinPackParameters: false
-BreakBeforeBraces: Custom
-BraceWrapping:
-    AfterCaseLabel: false
-    AfterClass: true
-    AfterEnum: false
-    AfterFunction: false
-    AfterNamespace: false
-    AfterStruct: false
-    AfterUnion: false
-    AfterExternBlock: false
-    BeforeCatch: false
-    BeforeElse: false
-    BeforeLambdaBody: false
-    BeforeWhile: false
-    SplitEmptyFunction: false
-    SplitEmptyRecord: false
-    AfterControlStatement: Never
 BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Attach
 BreakConstructorInitializers: AfterColon
@@ -45,27 +28,27 @@ ContinuationIndentWidth: 4
 ConstructorInitializerIndentWidth: 4
 Cpp11BracedListStyle: true
 DeriveLineEnding: true
-#EmptyLineBeforeAccessModifier: LogicalBlock
+# EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
 IncludeBlocks: Merge
-#IndentAccessModifiers: true
+# IndentAccessModifiers: true
 IndentCaseLabels: true
 IndentExternBlock: Indent
 IndentGotoLabels: true
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentWrappedFunctionNames: false
 InsertTrailingCommas: Wrapped
 KeepEmptyLinesAtTheStartOfBlocks: false
-#LambdaBodyIndentation: Signature
+# LambdaBodyIndentation: Signature
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: All
-#PPIndentWidth: 4
+# PPIndentWidth: 4
 SortIncludes: true
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true
-#SpaceAroundPointerQualifiers: Default
-#SpaceBeforeCaseColon: false
+# SpaceAroundPointerQualifiers: Default
+# SpaceBeforeCaseColon: false
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: false
@@ -79,7 +62,7 @@ SpacesInAngles: false
 SpacesInCStyleCastParentheses: false
 SpacesInConditionalStatement: false
 SpacesInContainerLiterals: false
-#SpacesInLineCommentPrefix: 1
+# SpacesInLineCommentPrefix: 1
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 UseCRLF: false
