@@ -302,7 +302,6 @@ int main(int argc, char** argv) {
     }
 
     struct sockaddr_un address;
-    int address_len = sizeof(address);
     memset(&address, 0, sizeof(address));
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, socket_path.c_str(), sizeof(address.sun_path) - 1);
