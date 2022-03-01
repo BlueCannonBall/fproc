@@ -1,12 +1,14 @@
 #include "streampeerbuffer.hpp"
 #include <boost/process.hpp>
 #include <chrono>
+#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <signal.h>
+#include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
@@ -38,6 +40,7 @@ unsigned int uid;
 
 struct Process {
     std::string command;
+    bp::group group;
     unique_ptr<bp::child> child;
     bool running = true;
     Env env;
@@ -66,6 +69,13 @@ unsigned int alloc_id() {
     }
 }
 
+inline void kill_process(Process* proc) {
+    //bp::system("/usr/bin/pkill -TERM -P" + to_string(proc->child->id()));
+    try {
+        proc->group.terminate();
+    } catch (std::exception& e) { }
+}
+
 void launch_process(Process* proc) {
     vector<string> command = {"-i", "--chdir=" + proc->working_dir};
     for (const auto& var : proc->env) {
@@ -73,12 +83,10 @@ void launch_process(Process* proc) {
     }
     vector<string> actual_command = {"/bin/sh", "-c", proc->command};
     command.insert(command.end(), actual_command.begin(), actual_command.end());
-    proc->child = std::move(make_unique<bp::child>("/usr/bin/env", command, bp::std_out > bp::null, bp::std_in<bp::null, bp::std_err> bp::null));
+    kill_process(proc);
+    proc->group = bp::group();
+    proc->child = std::move(make_unique<bp::child>("/usr/bin/env", command, bp::std_out > bp::null, bp::std_in<bp::null, bp::std_err> bp::null, proc->group));
     cout << "fprocd-launch_process: Launched process with pid " << proc->child->id() << endl;
-}
-
-inline void kill_process(Process* proc) {
-    bp::system("/usr/bin/pkill -TERM -P" + to_string(proc->child->id()));
 }
 
 std::vector<std::string> string_split(const std::string& str) {
