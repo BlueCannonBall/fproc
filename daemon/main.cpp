@@ -269,7 +269,7 @@ void maintain_procs() {
     for (;;) {
         data_mtx.lock();
         for (const auto& process : processes) {
-            if (!process.second->child->running() && process.second->running) {
+            if (!(process.second->child->running() && process.second->running)) {
                 cout << "fprocd-maintain_procs: Process (" << process.first << ") died\n";
                 process.second->child->join();
                 launch_process(process.second);
