@@ -169,7 +169,7 @@ fn main() -> std::io::Result<()> {
                     let mut stream = UnixStream::connect(socket_path).unwrap();
                     stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                    let mut read_buf = [0; 128];
+                    let mut read_buf = [0; 512];
                     stream.read(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
@@ -208,7 +208,7 @@ fn main() -> std::io::Result<()> {
                         buf.put_u32(id);
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 128];
+                        let mut read_buf = [0; 512];
                         stream.read(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
@@ -246,7 +246,7 @@ fn main() -> std::io::Result<()> {
 
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 128];
+                        let mut read_buf = [0; 512];
                         stream.read(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
@@ -261,7 +261,6 @@ fn main() -> std::io::Result<()> {
                         }
                     }
                     stream.shutdown(std::net::Shutdown::Both);
-
                 }
             }
         }
@@ -284,7 +283,7 @@ fn main() -> std::io::Result<()> {
                         buf.put_u32(id);
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 128];
+                        let mut read_buf = [0; 512];
                         stream.read(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
@@ -311,7 +310,7 @@ fn main() -> std::io::Result<()> {
                 let mut stream = UnixStream::connect(socket_path).unwrap();
                 stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                let mut read_buf = [0; 1024];
+                let mut read_buf = [0; 65536];
                 stream.read(&mut read_buf).unwrap();
                 stream.shutdown(std::net::Shutdown::Both);
 

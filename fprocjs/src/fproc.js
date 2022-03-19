@@ -92,7 +92,7 @@ class Fproc {
         }
 
         this.checkErrors();
-        const writer = new HSPB.HolySteamPeerBufferWriter(JSON.stringify(env).length + 100);
+        const writer = new HSPB.HolyStreamPeerBufferWriter(JSON.stringify(env).length + 100);
         writer.u8 = headers.Run;
         writer.string = command;
         writer.u8 = Number(customID !== undefined);
@@ -133,7 +133,7 @@ class Fproc {
      */
     async list() {
         this.checkErrors();
-        const writer = new HSPB.HolySteamPeerBufferWriter();
+        const writer = new HSPB.HolyStreamPeerBufferWriter();
         writer.u8 = headers.List;
         this.fproc.write(writer.buffer);
         return await this._awaitAsyncRequest(this._list);
@@ -185,7 +185,7 @@ class Fproc {
             throw new Error('Parameter "ID" needs to be a valid number');
         }
         this.checkErrors();
-        const writer = new HSPB.HolySteamPeerBufferWriter();
+        const writer = new HSPB.HolyStreamPeerBufferWriter();
         writer.u8 = header;
         writer.u32 = id;
         this.fproc.write(writer.buffer);
@@ -199,7 +199,7 @@ class Fproc {
      * @private
      */
     _list(buffer) {
-        const reader = new HSPB.HolySteamPeerBufferReader(buffer);
+        const reader = new HSPB.HolyStreamPeerBufferReader(buffer);
         let listed = {
             processAmount: reader.u32,
             processes: [],
@@ -223,7 +223,7 @@ class Fproc {
      * @private
      */
     _errorCheckResponse(buffer) {
-        const reader = new HSPB.HolySteamPeerBufferReader(buffer);
+        const reader = new HSPB.HolyStreamPeerBufferReader(buffer);
         if (reader.u8 === 1) {
             throw new FprocError("Fproc sent an error: " + reader.string);
             return false;

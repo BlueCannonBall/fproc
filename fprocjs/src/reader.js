@@ -1,4 +1,4 @@
-class HolySteamPeerBufferReader {
+class HolyStreamPeerBufferReader {
     constructor(buffer) {
         this.arrayView = new DataView(buffer);
         this.offset = 0;
@@ -32,7 +32,7 @@ class HolySteamPeerBufferReader {
     }
 }
 
-class HolySteamPeerBufferWriter {
+class HolyStreamPeerBufferWriter {
     constructor(size = 1024) {
         this.view = new DataView(new ArrayBuffer(size));
         this.offset = 0;
@@ -66,6 +66,6 @@ class HolySteamPeerBufferWriter {
 }
 
 module.exports = {
-    HolySteamPeerBufferReader,
-    HolySteamPeerBufferWriter,
+    HolyStreamPeerBufferReader,
+    HolyStreamPeerBufferWriter,
 };
