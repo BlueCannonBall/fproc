@@ -65,15 +65,15 @@ struct Process {
     }
 };
 
-int is_file(const char* path) {
+bool is_file(const char* path) {
     struct stat path_stat;
     stat(path, &path_stat);
     return S_ISREG(path_stat.st_mode);
 }
 
-bool is_number(string s) {
-    for (unsigned i = 0; i < s.length(); i++)
-        if (isdigit(s[i]) == false)
+bool is_number(const char* s) {
+    for (size_t i = 0; s[i] != '\0'; i++)
+        if (!isdigit(s[i]))
             return false;
 
     return true;
@@ -571,9 +571,15 @@ int main(int argc, char** argv) {
     DIR* procdir = opendir("/proc");
     struct dirent* entry;
     while ((entry = readdir(procdir))) {
-        if (is_file(entry->d_name) == 0 && is_number(entry->d_name)) {
-            if (getpid() != atoi(entry->d_name))
-                procfs_folders.push_back(std::string(entry->d_name));
+        char full_path[7 + strlen(entry->d_name)];
+        memset(full_path, 0, sizeof(full_path));
+        strcat(full_path, "/proc/");
+        strcat(full_path, entry->d_name);
+
+        if (!is_file(full_path) && is_number(entry->d_name)) {
+            if (getpid() != atoi(entry->d_name)) {
+                procfs_folders.push_back(entry->d_name);
+            }
         }
     }
     closedir(procdir);
