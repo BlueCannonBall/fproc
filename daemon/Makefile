@@ -1,14 +1,14 @@
-CC = g++
-CFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -O3 -flto -static-libstdc++ -Wl,-Bstatic -lboost_system -Wl,-Bdynamic -lpthread
+CXX = g++
+CXXFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -g -flto -static-libstdc++ -Wl,-Bstatic -lboost_system -lboost_filesystem -Wl,-Bdynamic -lpthread
 TARGET = fprocd
 
 $(TARGET): main.cpp streampeerbuffer.cpp streampeerbuffer.hpp
-	$(CC) $< streampeerbuffer.cpp $(CFLAGS) -o $@
+	$(CXX) $< streampeerbuffer.cpp $(CXXFLAGS) -o $@
 
 .PHONY: clean install
 
 install:
-	cp ./fprocd /usr/local/bin
+	cp $(TARGET) /usr/local/bin
 
 clean:
 	rm -f $(TARGET)

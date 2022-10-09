@@ -1,18 +1,18 @@
-CC = g++
-CFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -O3 -flto -pthread -fopenmp -Wl,-Bstatic -lboost_system `pkg-config gtkmm-3.0 --cflags`
+CXX = g++
+CXXFLAGS = -fdiagnostics-color=always -Wall -Wno-unused-result -s -O3 -flto -pthread -fopenmp -Wl,-Bstatic -lboost_system `pkg-config gtkmm-3.0 --cflags`
 OBJDIR = obj
 TARGET = fproc-gui
 
 $(TARGET): $(OBJDIR)/main.o $(OBJDIR)/streampeerbuffer.o
-	$(CC) $^ $(CFLAGS) -Wl,-Bdynamic `pkg-config gtkmm-3.0 --libs` -o $@
+	$(CXX) $^ $(CXXFLAGS) -Wl,-Bdynamic `pkg-config gtkmm-3.0 --libs` -o $@
 
 $(OBJDIR)/main.o: main.cpp streampeerbuffer.hpp
 	@mkdir -p $(OBJDIR)
-	$(CC) -c $< $(CFLAGS) -o $@
+	$(CXX) -c $< $(CXXFLAGS) -o $@
 
 $(OBJDIR)/streampeerbuffer.o: streampeerbuffer.cpp streampeerbuffer.hpp
 	@mkdir -p $(OBJDIR)
-	$(CC) -c $< $(CFLAGS) -o $@
+	$(CXX) -c $< $(CXXFLAGS) -o $@
 
 .PHONY: clean install
 

@@ -167,10 +167,17 @@ fn main() -> std::io::Result<()> {
 
                     // open socket
                     let mut stream = UnixStream::connect(socket_path).unwrap();
+                    let length = buf.cursor.get_ref().len() as u16;
+                    stream.write_all(&length.to_be_bytes());
                     stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                    let mut read_buf = [0; 512];
-                    stream.read(&mut read_buf).unwrap();
+
+                    let mut length = [0u8; 2];
+                    stream.read_exact(&mut length);
+                    let length = u16::from_be_bytes(length);
+
+                    let mut read_buf = vec![0u8; length as usize];
+                    stream.read_exact(&mut read_buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Both);
 
                     let mut buf = binary::StreamPeerBuffer::new();
@@ -206,10 +213,16 @@ fn main() -> std::io::Result<()> {
                             }
                         };
                         buf.put_u32(id);
+                        let length = buf.cursor.get_ref().len() as u16;
+                        stream.write_all(&length.to_be_bytes());
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 512];
-                        stream.read(&mut read_buf).unwrap();
+                        let mut length = [0u8; 2];
+                        stream.read_exact(&mut length);
+                        let length = u16::from_be_bytes(length);
+
+                        let mut read_buf = vec![0; length as usize];
+                        stream.read_exact(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
                         buf.set_data_array(read_buf.to_vec());
@@ -244,10 +257,16 @@ fn main() -> std::io::Result<()> {
                         };
                         buf.put_u32(id);
 
+                        let length = buf.cursor.get_ref().len() as u16;
+                        stream.write_all(&length.to_be_bytes());
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 512];
-                        stream.read(&mut read_buf).unwrap();
+                        let mut length = [0u8; 2];
+                        stream.read_exact(&mut length);
+                        let length = u16::from_be_bytes(length);
+
+                        let mut read_buf = vec![0; length as usize];
+                        stream.read_exact(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
                         buf.set_data_array(read_buf.to_vec());
@@ -281,10 +300,16 @@ fn main() -> std::io::Result<()> {
                             }
                         };
                         buf.put_u32(id);
+                        let length = buf.cursor.get_ref().len() as u16;
+                        stream.write_all(&length.to_be_bytes());
                         stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                        let mut read_buf = [0; 512];
-                        stream.read(&mut read_buf).unwrap();
+                        let mut length = [0u8; 2];
+                        stream.read_exact(&mut length);
+                        let length = u16::from_be_bytes(length);
+
+                        let mut read_buf = vec![0; length as usize];
+                        stream.read_exact(&mut read_buf).unwrap();
 
                         let mut buf = binary::StreamPeerBuffer::new();
                         buf.set_data_array(read_buf.to_vec());
@@ -308,10 +333,16 @@ fn main() -> std::io::Result<()> {
 
                 // open socket
                 let mut stream = UnixStream::connect(socket_path).unwrap();
+                let length = buf.cursor.get_ref().len() as u16;
+                stream.write_all(&length.to_be_bytes());
                 stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
 
-                let mut read_buf = [0; 65536];
-                stream.read(&mut read_buf).unwrap();
+                let mut length = [0u8; 2];
+                stream.read_exact(&mut length);
+                let length = u16::from_be_bytes(length);
+
+                let mut read_buf = vec![0; length as usize];
+                stream.read_exact(&mut read_buf).unwrap();
                 stream.shutdown(std::net::Shutdown::Both);
 
                 let mut buf = binary::StreamPeerBuffer::new();

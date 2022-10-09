@@ -21,9 +21,6 @@
 #include <unistd.h>
 #include <unordered_map>
 
-#define MESSAGE_SIZE 65536
-
-using namespace std;
 namespace bp = boost::process;
 
 int argc;
@@ -41,12 +38,12 @@ enum class Packet {
 
 struct Error {
     int code = 0;
-    string error;
+    std::string error;
 };
 
 struct Process {
     unsigned int id;
-    string name;
+    std::string name;
     unsigned int pid;
     bool running;
     unsigned int restarts;
@@ -80,19 +77,19 @@ bool is_number(const char* s) {
 }
 
 int open_fproc_sock() {
-    string socket_path;
+    std::string socket_path;
     if (argc > 1) {
         socket_path = argv[1];
     } else if (home) {
-        socket_path = string(home) + "/.fproc.sock";
+        socket_path = std::string(home) + "/.fproc.sock";
     } else {
-        cout << "fproc-gui-open_fproc_socket: Error: HOME variable not present in environment\n";
+        std::cout << "fproc-gui-open_fproc_socket: Error: HOME variable not present in environment" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     int sock;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        perror("socket(2)");
+        perror("socket");
         exit(EXIT_FAILURE);
     }
 
@@ -100,15 +97,15 @@ int open_fproc_sock() {
     address.sun_family = AF_UNIX;
     strcpy(address.sun_path, socket_path.c_str());
 
-    if (connect(sock, (struct sockaddr*) &address, sizeof(struct sockaddr_un)) != -1) {
+    if (connect(sock, (struct sockaddr*) &address, sizeof(address)) != -1) {
         return sock;
     } else {
-        perror("connect(2)");
+        perror("connect");
         exit(EXIT_FAILURE);
     }
 }
 
-Error run_process(const string& name, const string& working_dir, unsigned int id = 0, bool custom_id = false) {
+Error run_process(const std::string& name, const std::string& working_dir, unsigned int id = 0, bool custom_id = false) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Run);
     buf.put_string(name);
@@ -117,9 +114,9 @@ Error run_process(const string& name, const string& working_dir, unsigned int id
         buf.put_u32(id);
     }
 
-    unordered_map<string, string> environ_map;
-    for (char** var = environ; *var != 0; var++) {
-        vector<string> var_pair;
+    std::unordered_map<std::string, std::string> environ_map;
+    for (char** var = environ; *var != NULL; var++) {
+        std::vector<std::string> var_pair;
         std::string var_str(*var);
         boost::split(var_pair, var_str, boost::is_any_of("="));
         environ_map[var_pair[0]] = var_pair[1];
@@ -130,22 +127,29 @@ Error run_process(const string& name, const string& working_dir, unsigned int id
         buf.put_string(var.second);
     }
     buf.put_string(working_dir);
+    buf.offset = 0;
+    buf.put_u16(buf.size());
     write(sock, buf.data(), buf.size());
 
     buf.reset();
-    buf.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data(), buf.size());
+    buf.resize(2);
+    int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
     if (valread == 0) {
-        cout << "fproc-gui-run_process: Error: Server disconnected before responding\n";
+        std::cout << "fproc-gui-run_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
-    buf.resize(valread);
+    buf.resize(2 + buf.get_u16());
+    valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
+    if (valread == 0) {
+        std::cout << "fproc-gui-run_process: Error: Server disconnected before responding" << std::endl;
+        return Error {1, "Server disconnected before responding"};
+    }
 
     uint8_t code = buf.get_u8();
-    string error;
+    std::string error;
     if (code) {
         buf.get_string(error);
-        cout << "fproc-gui-run_process: Error: " << error << endl;
+        std::cout << "fproc-gui-run_process: Error: " << error << std::endl;
     }
     return Error {code, error};
 }
@@ -154,22 +158,29 @@ Error delete_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Delete);
     buf.put_u32(id);
+    buf.offset = 0;
+    buf.put_u16(buf.size());
     write(sock, buf.data(), buf.size());
 
     buf.reset();
-    buf.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data(), buf.size());
+    buf.resize(2);
+    int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
     if (valread == 0) {
-        cout << "fproc-gui-delete_process: Error: Server disconnected before responding\n";
+        std::cout << "fproc-gui-delete_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
-    buf.resize(valread);
+    buf.resize(2 + buf.get_u16());
+    valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
+    if (valread == 0) {
+        std::cout << "fproc-gui-delete_process: Error: Server disconnected before responding" << std::endl;
+        return Error {1, "Server disconnected before responding"};
+    }
 
     uint8_t code = buf.get_u8();
-    string error;
+    std::string error;
     if (code) {
         buf.get_string(error);
-        cout << "fproc-gui-delete_process: Error: " << error << endl;
+        std::cout << "fproc-gui-delete_process: Error: " << error << std::endl;
     }
     return Error {code, error};
 }
@@ -178,39 +189,53 @@ Error stop_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Stop);
     buf.put_u32(id);
+    buf.offset = 0;
+    buf.put_u16(buf.size());
     write(sock, buf.data(), buf.size());
 
     buf.reset();
-    buf.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data(), buf.size());
+    buf.resize(2);
+    int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
     if (valread == 0) {
-        cout << "fproc-gui-stop_process: Error: Server disconnected before responding\n";
+        std::cout << "fproc-gui-stop_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
-    buf.resize(valread);
+    buf.resize(2 + buf.get_u16());
+    valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
+    if (valread == 0) {
+        std::cout << "fproc-gui-stop_process: Error: Server disconnected before responding" << std::endl;
+        return Error {1, "Server disconnected before responding"};
+    }
 
     uint8_t code = buf.get_u8();
-    string error;
+    std::string error;
     if (code) {
         buf.get_string(error);
-        cout << "fproc-gui-stop_process: Error: " << error << endl;
+        std::cout << "fproc-gui-stop_process: Error: " << error << std::endl;
     }
     return Error {code, error};
 }
 
-Error get_processes(vector<Process>& processes) {
+Error get_processes(std::vector<Process>& processes) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Get);
+    buf.offset = 0;
+    buf.put_u16(buf.size());
     write(sock, buf.data(), buf.size());
 
     buf.reset();
-    buf.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data(), buf.size());
+    buf.resize(2);
+    int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
     if (valread == 0) {
-        cout << "fproc-gui-get_processes: Error: Server disconnected before responding\n";
+        std::cout << "fproc-gui-get_processes: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
-    buf.resize(valread);
+    buf.resize(2 + buf.get_u16());
+    valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
+    if (valread == 0) {
+        std::cout << "fproc-gui-get_processes: Error: Server disconnected before responding" << std::endl;
+        return Error {1, "Server disconnected before responding"};
+    }
 
     unsigned int len = buf.get_u32();
     for (unsigned int i = 0; i < len; i++) {
@@ -229,22 +254,29 @@ Error start_process(unsigned int id) {
     spb::StreamPeerBuffer buf(true);
     buf.put_u8((uint8_t) Packet::Start);
     buf.put_u32(id);
+    buf.offset = 0;
+    buf.put_u16(buf.size());
     write(sock, buf.data(), buf.size());
 
     buf.reset();
-    buf.resize(MESSAGE_SIZE);
-    int valread = read(sock, buf.data(), buf.size());
+    buf.resize(2);
+    int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
     if (valread == 0) {
-        cout << "fproc-gui-start_process: Error: Server disconnected before responding\n";
+        std::cout << "fproc-gui-start_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
-    buf.resize(valread);
+    buf.resize(2 + buf.get_u16());
+    valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
+    if (valread == 0) {
+        std::cout << "fproc-gui-start_process: Error: Server disconnected before responding" << std::endl;
+        return Error {1, "Server disconnected before responding"};
+    }
 
     uint8_t code = buf.get_u8();
-    string error;
+    std::string error;
     if (code) {
         buf.get_string(error);
-        cout << "fproc-gui-start_process: Error: " << error << endl;
+        std::cout << "fproc-gui-start_process: Error: " << error << std::endl;
     }
     return Error {code, error};
 }
@@ -311,7 +343,7 @@ public:
         if (home) {
             working_dir_entry.set_filename(home);
         } else {
-            cout << "fproc-gui-RunDialog::RunDialog: Error: HOME variable not present in environment\n";
+            std::cout << "fproc-gui-RunDialog::RunDialog: Error: HOME variable not present in environment" << std::endl;
             exit(EXIT_FAILURE);
         }
 
@@ -411,7 +443,7 @@ private:
     Gtk::ScrolledWindow scrolled_window;
     double old_hscroll_pos;
     double old_vscroll_pos;
-    vector<Process> processes;
+    std::vector<Process> processes;
 
     Gtk::Button run_btn {"Run"};
     Gtk::Button start_btn {"Start"};
@@ -419,7 +451,7 @@ private:
     Gtk::Button delete_btn {"Delete"};
     Gtk::Button refresh_btn {"Refresh"};
 
-    void repopulate_list_store(vector<Process>& new_processes) {
+    void repopulate_list_store(std::vector<Process>& new_processes) {
         Gtk::TreeModel::Path old_path;
         Gtk::TreeViewColumn* focus_column;
         treeview.get_cursor(old_path, focus_column);
@@ -459,7 +491,7 @@ private:
     }
 
     void on_refresh_clicked() {
-        vector<Process> new_processes;
+        std::vector<Process> new_processes;
         get_processes(new_processes);
         if (processes.size() != new_processes.size()) {
             repopulate_list_store(new_processes);
@@ -567,7 +599,7 @@ int main(int argc, char** argv) {
     ::argc = argc;
     ::argv = argv;
 
-    std::vector<string> procfs_folders;
+    std::vector<std::string> procfs_folders;
     DIR* procdir = opendir("/proc");
     struct dirent* entry;
     while ((entry = readdir(procdir))) {
@@ -584,7 +616,7 @@ int main(int argc, char** argv) {
     }
     closedir(procdir);
 
-    atomic<bool> found_process(false);
+    std::atomic<bool> found_process(false);
 #pragma omp parallel for simd shared(found_process)
     for (unsigned process = 0; process < procfs_folders.size(); process++) {
         if (found_process)
@@ -593,8 +625,8 @@ int main(int argc, char** argv) {
         struct stat statbuf;
         if (stat(("/proc/" + procfs_folders[process]).c_str(), &statbuf) == 0) {
             if (getuid() == statbuf.st_uid) {
-                ifstream comm_file("/proc/" + procfs_folders[process] + "/comm");
-                string comm((std::istreambuf_iterator<char>(comm_file)),
+                std::ifstream comm_file("/proc/" + procfs_folders[process] + "/comm");
+                std::string comm((std::istreambuf_iterator<char>(comm_file)),
                     std::istreambuf_iterator<char>());
 
                 if (comm == "fprocd\n") {
@@ -602,7 +634,7 @@ int main(int argc, char** argv) {
                 }
             }
         } else {
-            perror("stat(2)");
+            perror("stat");
         }
     }
 
@@ -613,13 +645,13 @@ int main(int argc, char** argv) {
             bp::std_in<bp::null,
                 bp::std_err> bp::null)
             .detach();
-        cout << "fproc-gui: Started daemon\n";
-        this_thread::sleep_for(chrono::milliseconds(500));
+        std::cout << "fproc-gui: Started daemon" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     sock = open_fproc_sock();
     atexit([]() {
-        cout << "fproc-gui: Closing socket\n";
+        std::cout << "fproc-gui: Closing socket" << std::endl;
         close(sock);
     });
     auto app = Gtk::Application::create(argc, argv, "org.fproc.gui");
