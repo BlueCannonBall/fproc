@@ -64,7 +64,3 @@ git clone https://github.com/BlueCannonBall/fproc && cd fproc && sudo apt-get in
 ## Downloading & Installing from GitHub Actions
 
 `fproc` has a GitHub action which automatically builds the daemon, CLI, and GUI whenever `fproc` is updated. `fproc` can be installed from GitHub Actions by downloading the latest build artifacts and running the install script bundled with the artifacts.
-
-## Installing the JavaScript library
-
-Go to https://github.com/BlueCannonBall/fproc/tree/main/fprocjs
