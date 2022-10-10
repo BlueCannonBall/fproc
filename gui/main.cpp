@@ -459,14 +459,14 @@ private:
         old_vscroll_pos = scrolled_window.get_vadjustment()->get_value();
         list_store->clear();
         for (const auto& process : new_processes) {
-            auto row = *(list_store->append());
+            auto row = *list_store->append();
             row[columns.id] = process.id;
             row[columns.name] = process.name;
             row[columns.pid] = process.pid;
             row[columns.running] = process.running;
             row[columns.restarts] = process.restarts;
-            treeview.set_cursor(old_path);
         }
+        treeview.set_cursor(old_path);
         processes = new_processes;
         g_timeout_add(
             1, [](gpointer data) -> gboolean {
