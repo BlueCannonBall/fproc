@@ -134,13 +134,13 @@ Error run_process(const std::string& name, const std::string& working_dir, unsig
     buf.reset();
     buf.resize(2);
     int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-run_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
     buf.resize(2 + buf.get_u16());
     valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-run_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
@@ -165,13 +165,13 @@ Error delete_process(unsigned int id) {
     buf.reset();
     buf.resize(2);
     int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-delete_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
     buf.resize(2 + buf.get_u16());
     valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-delete_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
@@ -196,13 +196,13 @@ Error stop_process(unsigned int id) {
     buf.reset();
     buf.resize(2);
     int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-stop_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
     buf.resize(2 + buf.get_u16());
     valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-stop_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
@@ -226,13 +226,13 @@ Error get_processes(std::vector<Process>& processes) {
     buf.reset();
     buf.resize(2);
     int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-get_processes: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
     buf.resize(2 + buf.get_u16());
     valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-get_processes: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
@@ -261,13 +261,13 @@ Error start_process(unsigned int id) {
     buf.reset();
     buf.resize(2);
     int valread = recv(sock, buf.data(), 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-start_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }
     buf.resize(2 + buf.get_u16());
     valread = recv(sock, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-    if (valread == 0) {
+    if (valread <= 0) {
         std::cout << "fproc-gui-start_process: Error: Server disconnected before responding" << std::endl;
         return Error {1, "Server disconnected before responding"};
     }

@@ -119,13 +119,13 @@ void handle_conn(int socket) {
         spb::StreamPeerBuffer buf(true);
         buf.resize(2);
         int valread = recv(socket, buf.data(), 2, MSG_WAITALL);
-        if (valread == 0) {
+        if (valread <= 0) {
             std::cout << "fprocd-handle_conn: Client disconnected" << std::endl;
             return;
         }
         buf.resize(2 + buf.get_u16());
         valread = recv(socket, buf.data() + 2, buf.size() - 2, MSG_WAITALL);
-        if (valread == 0) {
+        if (valread <= 0) {
             std::cout << "fprocd-handle_conn: Client disconnected" << std::endl;
             return;
         }
