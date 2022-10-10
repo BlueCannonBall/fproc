@@ -479,7 +479,7 @@ private:
     }
 
     void on_treeview_cursor_changed() {
-        auto row = *(treeview.get_selection()->get_selected());
+        auto row = *treeview.get_selection()->get_selected();
         stop_btn.set_sensitive(row[columns.running]);
         if (row[columns.running]) {
             start_btn.set_label("Restart");
@@ -511,7 +511,7 @@ private:
     }
 
     void on_start_clicked() {
-        auto row = *(treeview.get_selection()->get_selected());
+        auto row = *treeview.get_selection()->get_selected();
 
         Error error = start_process(row[columns.id]);
         if (error.code) {
@@ -529,7 +529,7 @@ private:
     }
 
     void on_stop_clicked() {
-        auto row = *(treeview.get_selection()->get_selected());
+        auto row = *treeview.get_selection()->get_selected();
 
         Error error = stop_process(row[columns.id]);
         if (error.code) {
@@ -547,7 +547,7 @@ private:
     }
 
     void on_delete_clicked() {
-        auto row = *(treeview.get_selection()->get_selected());
+        auto row = *treeview.get_selection()->get_selected();
 
         Error error = delete_process(row[columns.id]);
         if (error.code) {
