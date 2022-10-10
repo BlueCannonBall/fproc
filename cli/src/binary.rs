@@ -161,7 +161,6 @@ impl StreamPeerBuffer {
 
     pub fn set_data_array(&mut self, new_data: Vec<u8>) {
         let cursor = Cursor::new(Vec::new());
-        //drop(self.cursor);
         self.cursor = cursor;
         let reference = self.cursor.get_mut();
         for byte in new_data.iter() {
