@@ -1,16 +1,12 @@
 #![allow(dead_code)]
-use std::io::Write;
-
-use std::io::Cursor;
-use std::io::Read;
+use std::io::{Cursor, Read, Write};
 
 pub struct StreamPeerBuffer {
     pub cursor: Cursor<Vec<u8>>,
 }
+
 impl StreamPeerBuffer {
     pub fn new() -> StreamPeerBuffer {
-        //static mut data :Vec<u8> = vec![];
-        //let cursor = Cursor::new(&mut data);
         StreamPeerBuffer {
             cursor: Cursor::new(Vec::new()),
         }
@@ -82,84 +78,6 @@ impl StreamPeerBuffer {
             .write(&value.to_be_bytes())
             .expect("Put error");
     }
-
-    // minecraft encodings
-    pub fn put_varint_mc(&mut self, mut value: i32) {
-        while value != 0 {
-            let mut temp: u8 = (value & 0b01111111) as u8;
-            value = value >> 7;
-            if value != 0 {
-                temp = temp | 0b10000000;
-            }
-            self.put_u8(temp);
-        }
-    }
-
-    pub fn get_varint_mc(&mut self) -> i32 {
-        let mut num_read: i32 = 0;
-        let mut result: i32 = 0;
-        let mut read: u8 = 255;
-
-        while (read & 0b10000000) != 0 {
-            read = self.get_u8();
-            let value: i32 = (read & 0b01111111) as i32;
-            result = result | (value << (7 * num_read));
-
-            num_read += 1;
-            if num_read > 5 {
-                panic!("VarInt is too big");
-            }
-        }
-        result
-    }
-    pub fn put_varlong(&mut self, mut value: i64) {
-        while value != 0 {
-            let mut temp: u8 = (value & 0b01111111) as u8;
-            value = value >> 7;
-            if value != 1 {
-                temp = temp | 0b10000000;
-            }
-            self.put_u8(temp);
-        }
-    }
-    pub fn get_varlong(&mut self) -> i64 {
-        let mut numread: i32 = 0;
-        let mut result: i64 = 0;
-        let mut read: u8 = 255;
-        while (read & 0b10000000) != 0 {
-            read = self.get_u8();
-            let value = (read & 0b01111111) as i64;
-            result = result | (value << (7 * numread));
-
-            numread += 1;
-            if numread > 10 {
-                panic!("Varlong is too big")
-            }
-        }
-
-        result
-    }
-
-    pub fn put_varint_utf8(&mut self, value: String) {
-        let utf8 = value.as_bytes();
-        self.put_varint_mc(utf8.len() as i32);
-        for byte in utf8.iter() {
-            self.put_u8(*byte);
-        }
-    }
-
-    pub fn get_varint_utf8(&mut self) -> String {
-        let length = self.get_varint_mc();
-        let mut buf: Vec<u8> = vec![];
-
-        for _ in 0..length {
-            buf.push(self.get_u8());
-        }
-
-        String::from_utf8(buf).expect("Invalid utf8 in buf")
-    }
-
-    // end of minecraft encodings
 
     pub fn get_u8(&mut self) -> u8 {
         let mut res: [u8; 1] = [0; 1];
