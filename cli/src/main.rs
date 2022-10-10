@@ -80,7 +80,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("list")
-                .aliases(&["ls", "get", "status", "info"])
+                .aliases(&["ls", "get", "status", "info", "dir"])
                 .about("List all managed processes.")
                 .version("0.1"),
         )
