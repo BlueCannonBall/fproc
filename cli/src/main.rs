@@ -3,13 +3,13 @@ use clap::{App, Arg, SubCommand};
 use prettytable::{cell, row, Table};
 use procfs::process::all_processes;
 
+use std::env;
 use std::io::prelude::*;
 use std::os::unix::net::UnixStream;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
-use std::env;
-use std::path::Path;
 
 mod binary;
 mod model;
@@ -19,7 +19,7 @@ fn main() -> std::io::Result<()> {
     let matches = App::new("fproc")
         .subcommand(
             SubCommand::with_name("run")
-                .aliases(&["up", "create", "new"])
+                .aliases(&["up", "create", "new", "exec"])
                 .about("Run a process")
                 .version("0.1")
                 .arg(
@@ -36,12 +36,12 @@ fn main() -> std::io::Result<()> {
                         .takes_value(true)
                         .long("id")
                         .short("i")
-                        .value_name("ID")
-                )
+                        .value_name("ID"),
+                ),
         )
         .subcommand(
             SubCommand::with_name("stop")
-                .aliases(&["disable", "end"])
+                .aliases(&["disable", "end", "kill"])
                 .about("Stop a process")
                 .version("0.1")
                 .arg(
@@ -54,7 +54,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("restart")
-                .aliases(&["start"])
+                .aliases(&["start", "renew", "enable", "launch"])
                 .about("(Re)start a process")
                 .version("0.1")
                 .arg(
@@ -67,7 +67,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("delete")
-                .aliases(&["rm", "del"])
+                .aliases(&["rm", "del", "destroy"])
                 .about("Delete a process")
                 .version("0.1")
                 .arg(
@@ -80,7 +80,7 @@ fn main() -> std::io::Result<()> {
         )
         .subcommand(
             SubCommand::with_name("list")
-                .aliases(&["ls"])
+                .aliases(&["ls", "get", "status", "info"])
                 .about("List all managed processes.")
                 .version("0.1"),
         )
@@ -108,8 +108,8 @@ fn main() -> std::io::Result<()> {
                     if status.name == "fprocd" {
                         found_process = true;
                     }
-                },
-                Err(_) => ()
+                }
+                Err(_) => (),
             }
         }
     }
@@ -154,7 +154,7 @@ fn main() -> std::io::Result<()> {
 
                     // send current environment
                     let variables = env::vars();
-                    let variables:Vec<_> = variables.collect();
+                    let variables: Vec<_> = variables.collect();
                     buf.put_u32(variables.len() as u32);
                     for (key, value) in variables {
                         buf.put_utf8(key);
@@ -162,7 +162,11 @@ fn main() -> std::io::Result<()> {
                     }
 
                     // current working directory
-                    let cwd = env::current_dir().unwrap().to_string_lossy().as_ref().to_string();
+                    let cwd = env::current_dir()
+                        .unwrap()
+                        .to_string_lossy()
+                        .as_ref()
+                        .to_string();
                     buf.put_utf8(cwd);
 
                     // open socket
@@ -170,7 +174,6 @@ fn main() -> std::io::Result<()> {
                     let length = buf.cursor.get_ref().len() as u16;
                     stream.write_all(&length.to_be_bytes());
                     stream.write_all(buf.cursor.get_ref().as_slice()).unwrap();
-
 
                     let mut length = [0u8; 2];
                     stream.read_exact(&mut length);
@@ -363,14 +366,20 @@ fn main() -> std::io::Result<()> {
                         name: buf.get_utf8(),
                         pid: buf.get_u32(),
                         running: buf.get_u8() != 0,
-                        restarts: buf.get_u32()
+                        restarts: buf.get_u32(),
                     });
                 }
 
                 let mut table = Table::new();
                 table.add_row(row!["ID", "NAME", "PID", "RUNNING", "RESTARTS"]);
                 for process in processes {
-                    table.add_row(row![process.id, process.name, process.pid, process.running, process.restarts]);
+                    table.add_row(row![
+                        process.id,
+                        process.name,
+                        process.pid,
+                        process.running,
+                        process.restarts
+                    ]);
                 }
                 table.printstd();
             }
