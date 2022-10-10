@@ -646,7 +646,7 @@ int main(int argc, char** argv) {
                 bp::std_err> bp::null)
             .detach();
         std::cout << "fproc-gui: Started daemon" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     sock = open_fproc_sock();
