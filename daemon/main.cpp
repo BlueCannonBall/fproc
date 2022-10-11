@@ -338,7 +338,16 @@ int main(int argc, char** argv) {
         struct sockaddr_un client_address;
         int client_address_len = sizeof(address);
         if ((new_socket = accept(server_fd, (struct sockaddr*) &client_address, (socklen_t*) &client_address_len)) == -1) {
+            if (errno == EPROTO || errno == ECONNABORTED) {
+                continue;
+            }
+
             perror("accept");
+            data_mtx.lock();
+            for (const auto& process : processes) {
+                process.second->kill();
+            }
+            data_mtx.unlock();
             exit(EXIT_FAILURE);
         }
 

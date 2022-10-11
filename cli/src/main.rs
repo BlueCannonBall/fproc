@@ -19,7 +19,7 @@ fn main() -> std::io::Result<()> {
     let matches = App::new("fproc")
         .subcommand(
             SubCommand::with_name("run")
-                .aliases(&["up", "create", "new", "exec"])
+                .aliases(&["create", "new", "exec"])
                 .about("Run a process")
                 .version("0.1")
                 .arg(
