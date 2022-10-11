@@ -336,8 +336,8 @@ int main(int argc, char** argv) {
     for (;;) {
         int new_socket;
         struct sockaddr_un client_address;
-        int client_address_len = sizeof(address);
-        if ((new_socket = accept(server_fd, (struct sockaddr*) &client_address, (socklen_t*) &client_address_len)) == -1) {
+        socklen_t client_address_len = sizeof(address);
+        if ((new_socket = accept(server_fd, (struct sockaddr*) &client_address, &client_address_len)) == -1) {
             if (errno == EPROTO || errno == ECONNABORTED) {
                 continue;
             }
